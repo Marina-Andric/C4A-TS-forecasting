@@ -1,14 +1,18 @@
 import matplotlib.pyplot as plt
 
-labels = ['First order autoregressive','Random walk',
-          'Simple exponential smoothing with drift',
-          'Differenced first order autoregressive model',
-          'Simple exponential smoothing',
-          'Damped-trend linear exponential smoothing',
-          'Linear exponential smoothing']
-values = [582, 260, 100, 49, 76, 19, 12]
+labelsValues = [
+                ('First-order autoregressive', 525),
+                ('Random walk', 249),
+                ('Simple exponential smoothing with drift', 100),
+                ('Second order autoregressive with a constant', 85),
+                ('Simple exponential smoothing', 64),
+                ('Differenced first order autoregressive model', 49),
+                ('Damped-trend linear exponential smoothing\nLinear exponential smoothing\nRandom walk with drift', 25)
+                ]
+labels=[x[0] for x in labelsValues]
+values=[x[1] for x in labelsValues]
 
-patches, texts = plt.pie(values, startangle=90, autopct='%1.0f%%', pctdistance=1.1)
+patches, _, texts = plt.pie(values, startangle=90, autopct='%1.0f%%', pctdistance=1.1)
 plt.legend(patches, labels, loc="best")
 plt.axis('equal')
 plt.tight_layout()
