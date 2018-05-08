@@ -12,12 +12,12 @@ def get_gef_values(month):
         with q1 as (
         select gef_value, gef_type_id, interval_start_label, user_in_role_id, pilot_code
         from city4age_sr.vw_gef_calculated_interpolated_predicted_values 
-        where interval_start_label = '{0}' and data_type = 'p'
+        where interval_start_label = '{0}' and data_type = 'p' and pilot_code = 'bhx'
         ), 
         q2 as (
         select gef_value, gef_type_id, interval_start_label, user_in_role_id
         from city4age_sr.vw_gef_calculated_interpolated_predicted_values 
-        where interval_start_label = '{0}' and data_type = 'c'
+        where interval_start_label = '{0}' and data_type = 'c' and pilot_code = 'bhx'
         )
         select q1.gef_value as predicted, q2.gef_value as expected, q1.gef_type_id, q1.user_in_role_id, q1.pilot_code
         from q1 join q2 on q1.interval_start_label = q2.interval_start_label and q1.gef_type_id = q2.gef_type_id
