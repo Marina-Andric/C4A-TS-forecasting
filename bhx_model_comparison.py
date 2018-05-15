@@ -1,18 +1,25 @@
 import pandas as pd
 import numpy as np
 import psycopg2
+import math
+import datetime
 from matplotlib import pyplot as plt
-from pandas.plotting import autocorrelation_plot
+from matplotlib import dates
+# from pandas.plotting import autocorrelation_plot
 from statsmodels.tsa.arima_model import ARIMA
+import warnings
+
+warnings.filterwarnings("ignore")
+
 
 def get_data(userId, dvId):
-    conn = psycopg2.connect(host = 'localhost', database = 'city4age', user = 'postgres', password = 'postgres')
+    conn = psycopg2.connect(host='localhost', database='city4age', user='postgres', password='postgres')
     cur = conn.cursor()
 
     sql = (
         '''
-        select gef_value, interval_start_label
-        from city4age_sr.vw_gef_calculated_interpolated_predicted_values
+        select gef_value, interval_start_label, detection_variable_name
+        from city4age_sr.vw_gef_calculated_interpolated_predicted_values 
         where user_in_role_id = {0} and gef_type_id = {1} and (data_type = 'c' or data_type = 'i')
         order by interval_start_label
         '''.format(userId, dvId)
@@ -23,66 +30,99 @@ def get_data(userId, dvId):
     df.columns = [iter[0] for iter in cur.description]
     return df
 
-def plot_time_series(data, title = 'some title'):
+
+def plot_time_series(data, title='some title'):
     plt.figure(figsize=(10, 4))
     plt.plot(data['interval_start_label'], data['gef_value'])
     plt.title(title)
     plt.grid(True)
-    plt.xticks(rotation = 80)
+    plt.xticks(rotation=80)
     plt.show()
+
 
 def plot_autocorrelation(data_series):
     autocorrelation_plot(data_series)
     plt.show()
 
-def plot_residuals(model):
-    residuals = pd.DataFrame(model.resid)
+
+def plot_residuals(model_fit):
+    residuals = pd.DataFrame(model_fit.resid)
     residuals.plot()
-    residuals.plot(kind = 'kde')
+    residuals.plot(kind='kde')
     # print("Residuals: " % residuals.describe())
     plt.show()
 
 
-data = get_data(109, 501)
-# plot_time_series(data, title = 'userId = 109, dvId = 501 (Overall), pilot = bhx')
+def find_optimal_model(train_data):
+    aic = 1000  # some initial value
+    for p in range(5):
+        for d in range(2):
+            for q in range(5):
+                for drift in ('nc', 'c'):
+                    try:
+                        order = (p, d, q)
+                        model_fit = ARIMA(train_data, order=order).fit(disp=False, trend=drift, transparams=True)
+                        # print('%s, order = (%d, %d, %d), aic = %f, bic = %f' % (drift, p, d, q, model_fit.aic, model_fit.bic))
+                        if not (math.isnan(model_fit.aic)) and model_fit.aic < aic:
+                            aic = model_fit.aic
+                            model_optimal = model_fit
+                            order_optimal = order
+                    except:
+                        pass
+    return aic, order_optimal, model_optimal
+
+def generate_date(sourcedate, steps=3):
+    result = []
+    for i in range(0, steps):
+        month = sourcedate.month + i
+        year = sourcedate.year + month // 12
+        month = (month + 1) % 12
+        result.append((datetime.date(year, month, 1)))
+    return result
+
+
+def plot_forecasts(data, forecasts, conf_int, userId):
+    figure = plt.figure(figsize=(10, 4))
+    plt.plot(data['interval_start_label'], data['gef_value'], label = 'actual')
+    interval_forecasts = generate_date(data['interval_start_label'].values[-1])
+    plt.plot(interval_forecasts, forecasts, color = 'red', label = 'forecast')
+    plt.plot(interval_forecasts, [conf_int[0][0], conf_int[1][0], conf_int[2][0]],
+             color='lightblue', label = '95.0% limits')
+    plt.plot(interval_forecasts, [conf_int[0][1], conf_int[1][1], conf_int[2][1]],
+             color='lightblue')
+    plt.legend(loc = 'best')
+    plt.title('user = %d and factor name = %s' %(userId, factor_name))
+    plt.grid(True)
+    labels = [pd.datetime.strftime(item, "%Y/%m") for item in data['interval_start_label']]
+    labels.extend([pd.datetime.strftime(item, "%Y/%m") for item in interval_forecasts])
+    plt.xticks(labels, rotation=80)
+    plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%Y-%m'))
+    # plt.show()
+    plt.tight_layout()
+    plt.savefig('forecastplot.png')
+
+userId = 110
+factorId = 501
+data = get_data(userId, factorId)
+factor_name=data['detection_variable_name'][0]
 
 for i in range(data.__len__()):
     data['interval_start_label'][i] = pd.datetime.strptime(data['interval_start_label'][i], '%Y/%m')
     data['gef_value'][i] = float(data['gef_value'][i])
 
-data_series = pd.Series(data['gef_value'])
+# plot_time_series(data, title = 'title')
+# data_series = pd.Series(data['gef_value'])
 # plot_autocorrelation(data_series)
 
-# comparison of arima models
+# data = data.iloc[:-1, :]
+train_data = data['gef_value'].values
+# test_data = data['gef_value']
+# print('test data: ', test_data)
 
-# autoregressive models
-model_410 = ARIMA(data['gef_value'].values, order=(4, 1, 0))
-model_410_fit = model_410.fit(disp=0)
+aic, order_optimal, model_optimal = find_optimal_model(train_data)
+print('aic: %f, order=%s' % (aic, order_optimal))
+forecasts, stderr, conf_int = model_optimal.forecast(steps=3)
+plot_forecasts(data, forecasts, conf_int, userId)
 
-predicted_values = model_410_fit.predict(start=16, end=18)
-print(predicted_values)
-
-print (model_410_fit.aic)
-print(model_410_fit.bic)
-# print (model_410_fit.resid)
-# plot_residuals(model_410_fit)
-
-# random walk
-model_rw = ARIMA(data['gef_value'].values, order=(0, 1, 0))
-model_rw_fit = model_rw.fit(disp=0)
-
-# plot_residuals(model_rw_fit)
-print(model_rw_fit.aic)
-print(model_rw_fit.bic)
-
-# random walk with drift
-model_rw_drift = ARIMA(data['gef_value'].values, order=(0, 1, 0))
-model_rw_drift_fit = model_rw.fit(disp=0, trend='c')
-
-# plot_residuals(model_rw_fit)
-print('RW with drift aic: ' % model_rw_drift_fit.aic)
-print('RW with drift bic: ' % model_rw_drift_fit.bic)
-
-# linear exponential smoothing
-# model_linexpsmooth = ARIMA(data['gef_values'].values, order=())
+# out-of-sample validation - estimation of errors
 
