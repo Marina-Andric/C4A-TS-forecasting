@@ -11,7 +11,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-
 def get_data(userId, dvId):
     conn = psycopg2.connect(host='localhost', database='city4age', user='postgres', password='postgres')
     cur = conn.cursor()
@@ -29,7 +28,6 @@ def get_data(userId, dvId):
     df = pd.DataFrame(cur.fetchall())
     df.columns = [iter[0] for iter in cur.description]
     return df
-
 
 def plot_time_series(data, title='some title'):
     plt.figure(figsize=(10, 4))
@@ -91,17 +89,17 @@ def plot_forecasts(data, forecasts, conf_int, userId):
     plt.plot(interval_forecasts, [conf_int[0][1], conf_int[1][1], conf_int[2][1]],
              color='lightblue')
     plt.legend(loc = 'best')
-    plt.title('user = %d and factor name = %s' %(userId, factor_name))
+    plt.title('userId = %d and factor name = %s' %(userId, factor_name))
     plt.grid(True)
     labels = [pd.datetime.strftime(item, "%Y/%m") for item in data['interval_start_label']]
     labels.extend([pd.datetime.strftime(item, "%Y/%m") for item in interval_forecasts])
     plt.xticks(labels, rotation=80)
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%Y-%m'))
-    # plt.show()
     plt.tight_layout()
+    # plt.show()
     plt.savefig('forecastplot.png')
 
-userId = 110
+userId = 125
 factorId = 501
 data = get_data(userId, factorId)
 factor_name=data['detection_variable_name'][0]
@@ -116,6 +114,7 @@ for i in range(data.__len__()):
 
 # data = data.iloc[:-1, :]
 train_data = data['gef_value'].values
+print (train_data)
 # test_data = data['gef_value']
 # print('test data: ', test_data)
 
@@ -126,3 +125,5 @@ plot_forecasts(data, forecasts, conf_int, userId)
 
 # out-of-sample validation - estimation of errors
 
+model_fit = ARIMA(train_data, order=(0, 0, 0)).fit(disp=False, trend='c', transparams=True)
+print('order = (%d, %d, %d), aic = %f, bic = %f' % (0, 0, 0, model_fit.aic, model_fit.bic))
