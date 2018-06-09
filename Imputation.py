@@ -48,7 +48,7 @@ def get_data():
 
 
 data = get_data()
-# print (data)
+print (data)
 # data.to_pickle('neki_fajl.ppp')
 
 bar_width = 0.25
@@ -58,7 +58,7 @@ opacity = 0.5
 plt.figure(figsize=(9, 3.5))
 perc = data['percentage_imputed']
 var_xticks = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI',
-              'XVII']
+              'XVII', 'XVIII']
 var_label = data['detection_variable_name'].values
 
 labels = pd.DataFrame()
@@ -77,7 +77,7 @@ plt.ylabel("% missing values")
 # plt.xlabel("variable name")
 plt.xticks(xaxis, var_xticks)
 plt.legend(loc='best', bbox_to_anchor=(1.5, 1.1))
-ycoords = [2, 4, 6, 8, 10]
+ycoords = [2, 4, 6, 8, 10, 12, 14, 16]
 for y in ycoords:
     plt.axhline(y, alpha=0.25, color='grey')
 plt.tight_layout()

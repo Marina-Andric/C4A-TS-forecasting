@@ -78,7 +78,6 @@ def generate_date(sourcedate, steps=3):
         result.append((datetime.date(year, month, 1)))
     return result
 
-
 def plot_forecasts(data, forecasts, conf_int, userId):
     figure = plt.figure(figsize=(10, 4))
     plt.plot(data['interval_start_label'], data['gef_value'], label = 'actual')
@@ -94,12 +93,13 @@ def plot_forecasts(data, forecasts, conf_int, userId):
     labels = [pd.datetime.strftime(item, "%Y/%m") for item in data['interval_start_label']]
     labels.extend([pd.datetime.strftime(item, "%Y/%m") for item in interval_forecasts])
     plt.xticks(labels, rotation=80)
+    plt.yticks(np.arange(0, 5, step = 0.5))
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%Y-%m'))
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('forecastplot.png')
+    plt.show()
+    # plt.savefig('forecastplot.png')
 
-userId = 125
+userId = 115
 factorId = 501
 data = get_data(userId, factorId)
 factor_name=data['detection_variable_name'][0]
@@ -118,12 +118,15 @@ print (train_data)
 # test_data = data['gef_value']
 # print('test data: ', test_data)
 
-aic, order_optimal, model_optimal = find_optimal_model(train_data)
-print('aic: %f, order=%s' % (aic, order_optimal))
-forecasts, stderr, conf_int = model_optimal.forecast(steps=3)
-plot_forecasts(data, forecasts, conf_int, userId)
+# aic, order_optimal, model_optimal = find_optimal_model(train_data)
+# print('aic: %f, order=%s' % (aic, order_optimal))
+# forecasts, stderr, conf_int = model_optimal.forecast(steps=3)
+# plot_forecasts(data, forecasts, conf_int, userId)
 
 # out-of-sample validation - estimation of errors
 
 model_fit = ARIMA(train_data, order=(0, 0, 0)).fit(disp=False, trend='c', transparams=True)
+forecasts, stderr, conf_int = model_fit.forecast(steps=3)
+plot_forecasts(data, forecasts, conf_int, userId)
+
 print('order = (%d, %d, %d), aic = %f, bic = %f' % (0, 0, 0, model_fit.aic, model_fit.bic))
