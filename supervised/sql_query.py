@@ -60,7 +60,7 @@ select
     percentile_cont(0.5) within group ( order by case when home_time < 86400 then walk_time_outdoor else NULL end ) as walk_time_outdoor_median,
     percentile_cont(0.75) within group ( order by case when home_time < 86400 then walk_time_outdoor else NULL end ) as walk_time_outdoor_best,
     status
-from crosstab('
+from city4age_sr.crosstab('
     select format(''%s%s'', date(time_interval.interval_start), care_recipient.id) as row_name, case when time_interval.interval_start <= ''2018-01-31'' then 1 else 2 end as trimester, date(time_interval.interval_start), care_recipient.id, variable.detection_variable_name, measure.measure_value
     from
         city4age_sr.variation_measure_value as measure inner join
