@@ -2,7 +2,6 @@ from matplotlib import cm, pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DayLocator
 import numpy as np
 
-
 def create_multi_variate_plot(data, activities):
     ### Subplot the states multi-variate single user - By States
     num_clusters = len(np.unique(data['cluster']))
