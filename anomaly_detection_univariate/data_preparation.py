@@ -85,7 +85,6 @@ def get_data():
     curr.close()
     conn.close()
     data = pd.read_csv("out.csv")
-        # data = pd.DataFrame(data_raw)
     return data
 
 

@@ -1,17 +1,19 @@
 import numpy as np
+import pandas as pd
 from hmmlearn.hmm import GaussianHMM
 import selectionCriteria
 from selectionCriteria import bic_criteria, aic_criteria
 
 import data_preparation
-from data_preparation import get_list_activities, prepare_data
+from data_preparation import prepare_data
 
-def get_optimal_hmms_for_users_single_variate(userId, data, cov_type):
-    activities = get_list_activities(userId)  # dictionary of GES and corresponding Measures
+def get_optimal_hmms_for_users_single_variate(data, cov_type):
+    activities = data.detection_variable_name.unique()
+    # activities = get_list_activities(userId)  # dictionary of GES and corresponding Measures
     dict_activity = {}
     for activity in activities:
         activity_data = prepare_data(data, activity)
-        best_value, best_model = optimize_number_of_clusters(activity_data.iloc[:, 2:], list(range(2, 11)), cov_type)
+        best_value, best_model = optimize_number_of_clusters(activity_data.iloc[:, 1:], list(range(2, 11)), cov_type)
         dict_activity.update({activity: best_model})
     return dict_activity
 

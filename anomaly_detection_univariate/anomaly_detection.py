@@ -53,8 +53,8 @@ def hmm_to_dict_single_variate(data, user, activity, cov_type):
     return dict
 
 data = get_data()
-user = [109]
-activity = 'walk_steps'
+user = [121]
+activity = 'physicalactivity_calories'
 
 # prepared_data = prepare_data1(data, user, [activity])
 # plot_time_series(prepared_data, user, activity)

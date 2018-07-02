@@ -67,7 +67,7 @@ def create_oneSeries_single_variate_plot(data, user, clusters, activity):
         plt.grid(True)
 
     plt.subplots_adjust(top=0.89, left=0.1, right=0.9, bottom=0.12)
-    plt.suptitle("User_in_role_id: " + str(user) + "     Activity: " + activity)
+    plt.suptitle("User_in_role_id: " + str(user) + "     Measure: " + activity)
     # plt.rcParams["figure.figsize"] = [25.0, 15.0]
 #     plt.savefig('Plots/transitions/''Transition_citizen_id_' + str(user)+ '_activity_'+ activity +'.png')
     plt.tight_layout()

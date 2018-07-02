@@ -13,11 +13,10 @@ import selectionCriteria
 from selectionCriteria import bic_criteria, aic_criteria
 
 import data_preparation
-from data_preparation import get_data, get_list_activities, prepare_data
+from data_preparation import get_data, prepare_data, insert_missing_dates
 
 import learn_optimal_model
 from learn_optimal_model import optimize_number_of_clusters, get_optimal_hmms_for_users_single_variate
-
 
 # def hmm_to_dict_single_variate(activity, model):
 #     mean = model.means_[0][0]
@@ -31,7 +30,7 @@ def hmm_to_dict_single_variate_v2(data, activity, model):
     dict = {}
     activity_data = prepare_data(data, activity)
     time_intervals = activity_data['interval_start']
-    activity_data = activity_data.values[:, 2:]
+    activity_data = activity_data.values[:, 1:]
 
     mean = model.means_[:, 0]
     var = model.covars_[:, 0][:, 0]
@@ -43,10 +42,11 @@ def hmm_to_dict_single_variate_v2(data, activity, model):
         cluster[i] = {}
         name = "cluster_" + str(i)
         mask = cluster_assignments == i
-        cluster_points_ = np.copy(activity_data)
-        cluster_points = [item for sublist in cluster_points_ for item in sublist]
+        # cluster_points_ = np.copy(activity_data)
+        cluster_points = [item for sublist in activity_data for item in sublist]
         for j in range(0, len(mask)):
-            if mask[j] == False:
+            # if mask[j] == False and (j == len(mask) - 1 or (j + 1 < len(mask) and mask[j + 1] == False)):
+            if mask[j] == False and (j == len(mask)-1 or (j+1<len(mask) and mask[j+1] == False) or (j-1 >= 0 and j+1<len(mask) and mask[j+1] == True and mask[j-1] == True)):
                 cluster_points[j] = "null"
             else:
                 cluster_points[j] = float(cluster_points[j])
@@ -133,7 +133,8 @@ def create_dict_activities(activities, model):
 # main function
 def start(userId):
     data = get_data(userId)  # collects all data for given userId and (sub)factorid
-    optimal_single_variate = get_optimal_hmms_for_users_single_variate(userId=userId, data=data, cov_type='diag')
+    # data = insert_missing_dates(data)
+    optimal_single_variate = get_optimal_hmms_for_users_single_variate(data=data, cov_type='diag')
     dict_single_variate = persist_activities_models_json(data, optimal_single_variate)
 
     with open('single_variate_hmms_bic.json', 'w') as outfile:
@@ -141,6 +142,5 @@ def start(userId):
 
     return json.dumps(dict_single_variate)
 
-
-start(userId=20)
+start(userId=130)
 

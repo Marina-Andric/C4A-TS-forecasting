@@ -1,26 +1,41 @@
 import psycopg2
 import pandas as pd
+import datetime
 
 # returns a list of activities for a given user
-def get_list_activities(userId):
-    conn = psycopg2.connect(host="localhost", database="city4age", user="postgres", password="postgres")
-    curr = conn.cursor()
-    sql = ('''
+# def get_list_activities(userId):
+#     conn = psycopg2.connect(host="localhost", database="city4age", user="postgres", password="postgres")
+#     curr = conn.cursor()
+#     sql = ('''
+#
+#         select distinct view1.detection_variable_name
+#         from city4age_sr.vw_detection_variable_derivation_per_user_in_role as view1
+#         where view1.user_in_role_id = {0}
+#         and view1.detection_variable_type = 'mea'
+#
+#     '''.format(userId)
+#            )
+#     curr.execute(sql)
+#     data = pd.DataFrame(curr.fetchall())
+#     data.columns = [i[0] for i in curr.description]
+#     curr.close()
+#     conn.close()
+#     activities = data.values[:, 0]
+#     return activities.tolist()
 
-        select distinct view1.detection_variable_name
-        from city4age_sr.vw_detection_variable_derivation_per_user_in_role as view1
-        where view1.user_in_role_id = {0}  
-        and view1.detection_variable_type = 'mea'
+def insert_missing_dates(data):
+    data['interval_start']=[item.strftime("%Y-%m-%d") for item in data['interval_start']]
+    data=pd.pivot_table(data, index=['interval_start', 'detection_variable_name'])
+    # data.index=pd.DatetimeIndex(data['interval_start'])
+    data.set_index(['interval_start'])
+    # print (len(data['interval_start']))
+    indx=pd.date_range(data['interval_start'].min(), data['interval_start'].max())
+    # print (indx)
+    # print (len(indx))
+    data.reindex(indx, fill_value=-5)
+    # print (data)
+    return data
 
-    '''.format(userId)
-           )
-    curr.execute(sql)
-    data = pd.DataFrame(curr.fetchall())
-    data.columns = [i[0] for i in curr.description]
-    curr.close()
-    conn.close()
-    activities = data.values[:, 0]
-    return activities.tolist()
 
 def prepare_data(data, activity_name):
     '''
@@ -28,10 +43,24 @@ def prepare_data(data, activity_name):
     :param activity_name: name of activity
     :return: activity_data
     '''
+    sleep_activities = ['sleep_light_time', 'sleep_awake_time', 'sleep_deep_time', 'sleep_tosleep_time', 'sleep_wakeup_num']
     activity_data = data[data['detection_variable_name'] == activity_name]
-    activity_data['interval_start'] = [item.strftime("%Y-%m-%d") for item in activity_data['interval_start']]
-    prepared_activity_data = activity_data[['detection_variable_name', 'interval_start', 'measure_value']]
+    # print (activity_name)
+    prepared_activity_data = activity_data[['interval_start','measure_value']]
+
+    if activity_name in sleep_activities:
+        prepared_activity_data['interval_start'] = [item.strftime("%Y-%m-%d") for item in prepared_activity_data['interval_start']]
+        # prepared_activity_data.index = pd.DatetimeIndex(activity_data['interval_end'])
+        # indx=pd.date_range(activity_data['interval_end'].min(), activity_data['interval_end'].max())
+        # prepared_activity_data=prepared_activity_data.reindex(indx, fill_value=-5)
+    else:
+        prepared_activity_data['interval_start'] = [item.strftime("%Y-%m-%d") for item in prepared_activity_data['interval_start']]
+        # prepared_activity_data.index = pd.DatetimeIndex(activity_data['interval_start'])
+        # indx=pd.date_range(activity_data['interval_start'].min(), activity_data['interval_start'].max())
+        # prepared_activity_data=prepared_activity_data.reindex(indx, fill_value=-5)
+
     return prepared_activity_data
+
 
 def get_data(userId):
     conn = psycopg2.connect(host="localhost", database="city4age", user="postgres", password="postgres")
