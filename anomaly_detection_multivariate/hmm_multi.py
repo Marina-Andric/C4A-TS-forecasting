@@ -1,5 +1,27 @@
 import numpy as np
 from hmmlearn.hmm import GaussianHMM
+from multivariate_plotting import create_multi_variate_plot
+
+
+def fit_hmm(data):
+    # print (data)
+    # data = data [['interval_start', 'physicalactivity_calories', 'walk_steps']]
+    bic, model = learn_hmm_multi(data.iloc[:,1:], 8)
+    # clusters = model.predict(data.iloc[:,1:])
+    # data['cluster'] = clusters
+    # create_multi_variate_plot(data)
+    # print (data)
+    return model, data
+
+
+def get_cluster_probabs(model, data):
+    probabs = model.predict_proba(data.iloc[:,1:])
+    # print (probabs)
+    probabs_np = np.array(probabs)
+    max_probab = np.amax(probabs_np, 1)
+    data['max_probab'] = max_probab
+    return data
+
 
 def bic_criteria(data, log_likelihood, model):
     '''
@@ -14,6 +36,7 @@ def bic_criteria(data, log_likelihood, model):
     logN = np.log(len(data))
     bic = -2 * log_likelihood + n_params * logN
     return(bic)
+
 
 def aic_criteria(data, log_likelihood, model):
     '''
