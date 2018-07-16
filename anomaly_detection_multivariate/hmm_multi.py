@@ -6,18 +6,20 @@ from multivariate_plotting import create_multi_variate_plot
 def fit_hmm(data):
     # print (data)
     # data = data [['interval_start', 'physicalactivity_calories', 'walk_steps']]
-    bic, model = learn_hmm_multi(data.iloc[:,1:], 8)
-    # clusters = model.predict(data.iloc[:,1:])
-    # data['cluster'] = clusters
+    bic, model = learn_hmm_multi(data.iloc[:,1:], 10)
+    clusters = model.predict(data.iloc[:,1:])
+    data['cluster'] = clusters
     # create_multi_variate_plot(data)
-    # print (data)
     return model, data
 
 
 def get_cluster_probabs(model, data):
-    probabs = model.predict_proba(data.iloc[:,1:])
+    clusters = model.predict(data.iloc[:,1:])
+    data['cluster'] = clusters
+    probabs = model.predict_proba(data.iloc[:, 1:-1])
     # print (probabs)
     probabs_np = np.array(probabs)
+    # print (np.sum(probabs_np, 1))
     max_probab = np.amax(probabs_np, 1)
     data['max_probab'] = max_probab
     return data

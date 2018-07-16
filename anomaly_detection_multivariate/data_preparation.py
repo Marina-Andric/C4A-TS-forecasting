@@ -1,5 +1,7 @@
 import psycopg2
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import minmax_scale
 
 def get_data(userId):
     conn = psycopg2.connect(host='localhost', database = 'city4age', user = 'city4age_dba', password = 'city4age_dba')
@@ -87,6 +89,8 @@ def pivot_data(df):
         row['interval_start'] = pd.datetime.strftime(row['interval_start'], "%Y-%m-%d")
     pivot_df = df.pivot_table(columns = 'detection_variable_name', values = 'measure_value', index='interval_start', aggfunc='max')
     pivot_df = pivot_df.reset_index()
+    pivot_df.index.name = None
+    # print (pivot_df)
     return pivot_df
 
 
@@ -97,12 +101,13 @@ def find_correlated_activities_foractivity(df, activity):
 
 
 # remove anomalous points - make train dataset
-def get_train_dataset(df):
+def prepare_dataset(df):
     df = df.dropna(axis=0, how='any')
     # df_noanomalies = df[df['home_time']==86400 and df['walk_distance_outdoor_slow_percentage'] == 100.0]
     df_noanomolies = df[df['physicalactivity_calories'] != 0]
     # df_noanomolies.dropna(axis=0) # drops rows with missing values
-    return df_noanomolies
+    df = df.reset_index(drop=True)
+    return df
 
 
 def extract_features_all(df):
@@ -112,3 +117,14 @@ def extract_features_all(df):
     features = df[['interval_start', 'physicalactivity_calories', 'walk_distance']]
     return features
 
+
+def normalize_features(data):
+    sc = StandardScaler()
+    for activity in list(data.columns)[1:]:
+        sc = sc.fit(data[activity].reshape(-1, 1))
+        data[activity] = sc.transform(data[activity].reshape(-1, 1))
+    return data
+
+# min_max scaling to [0, 1]
+def scaling_features_minmax(data):
+    scaled_data = minmax_scale.fit_tranform()
