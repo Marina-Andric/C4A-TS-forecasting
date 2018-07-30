@@ -12,6 +12,9 @@ from hmm_clustering import optimize_number_of_clusters
 from visualization import create_single_variate_plot, create_oneSeries_single_variate_plot, plot_time_series
 from  data_preparation import get_data, get_data1, prepare_data, prepare_data1
 
+# for reproducibility
+np.random.seed(0)
+
 def form_cluster_values(mask, values):
     result = values[:]
     for i in range(0, len(mask)):
@@ -53,7 +56,7 @@ def hmm_to_dict_single_variate(data, user, activity, cov_type):
     return dict
 
 data = get_data()
-user = [121]
+user = [115]
 activity = 'physicalactivity_calories'
 
 # prepared_data = prepare_data1(data, user, [activity])

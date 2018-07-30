@@ -6,14 +6,14 @@ from data_preparation import pivot_data, prepare_dataset, normalize_features
 import hmm_multi
 from hmm_multi import fit_hmm
 import multivariate_plotting
-from multivariate_plotting import create_many_singlevariate_plots, create_multivariate_plot2, plot_feature_distributions, pca, plot_feature_distributions2, plot_cluster_distribution, visualize_clustering
+from multivariate_plotting import create_multi_variate_plot, create_many_singlevariate_plots, create_multivariate_plot2, plot_feature_distributions, pca, plot_feature_distributions2, plot_cluster_distribution, visualize_clustering
 import warnings
 warnings.filterwarnings("ignore")
 import visualization
 from visualization import plot_feature_correlations, corr_visualization
 import numpy as np
 
-# for reproducibility 
+# for reproducibility
 np.random.seed(0)
 
 data = get_data(130)
@@ -43,19 +43,19 @@ prepared_data.to_csv('prepared data cr130.csv', sep='\t')
 # plot_feature_normalized(prepared_data)
 
 normalized_data = normalize_features(prepared_data)
-normalized_data.to_csv('xlsx/cr130_normalized.csv')
+# normalized_data.to_csv('xlsx/cr130_normalized.csv')
 
 # model, data_clusters = fit_hmm(normalized_data)
 # print (np.unique(data_clusters['cluster']))
 
 model, data_clusters = fit_hmm(prepared_data)
-visualize_clustering(model, data_clusters)
+# visualize_clustering(model, data_clusters)
 
 # print (data_clusters)
 
 # Visualize clusters (via PCA)
 # pca(data_clusters)
-create_multivariate_plot2(data_clusters)
+create_multi_variate_plot(data_clusters)
 
 
 

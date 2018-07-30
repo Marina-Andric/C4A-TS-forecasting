@@ -15,7 +15,7 @@ def create_single_variate_plot(data, user, clusters, activity):
     figure = plt.figure(figsize=(10, 6))
 #     data=data.loc[(data['user_in_role_id'] == user) & (data['detection_variable_name'].isin([activity]))]
 #     data.sort_values(by = ['interval_end'])
-    hidden_states = clusters
+    hidden_states = clusters[100:450]
     num_clusters = len(np.unique(clusters))
 #     dates=pd.to_datetime(data['interval_end'])
     dates = data['interval_start']
@@ -24,9 +24,10 @@ def create_single_variate_plot(data, user, clusters, activity):
     colours = ["b", "g", "r", "maroon", "lightskyblue", "slategrey", "mediumspringgreen", "hotpink", "gold", "indigo"]
     i=0
     lines=[]
+    dates = dates[100:450]
     for ax in axs:
         mask = hidden_states == i
-        Y = data[activity]
+        Y = data[activity][100:450]
         ax.plot_date(dates[mask], Y[mask], ".-", c=colours[i], label =activity)
         i=i+1
         ax.set_title("{0}. Behaviour".format(i))
@@ -39,7 +40,7 @@ def create_single_variate_plot(data, user, clusters, activity):
         # plt.savefig(path_store + 'user_' + str(results[0])+ '_activity_'+str(results[1])+'.png', bbox_inches='tight')
     fig.subplots_adjust(top=0.89, left=0.06, right=0.98, bottom=0.12, hspace = 0.25)
     #axs.flatten()[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.5), ncol=2)
-    plt.suptitle("User_in_role_id: " + str(user) + "     Activity: "+ activity)
+    # plt.suptitle("User_in_role_id: " + str(user) + "     Activity: "+ activity)
     # plt.rcParams["figure.figsize"]=[25.0, 15.0]
     plt.tight_layout()
     # plt.savefig('citizen_id_' + str(user) + '_activity_' + activity + '.png', dpi=1000)
@@ -67,7 +68,7 @@ def create_oneSeries_single_variate_plot(data, user, clusters, activity):
         plt.grid(True)
 
     plt.subplots_adjust(top=0.89, left=0.1, right=0.9, bottom=0.12)
-    plt.suptitle("User_in_role_id: " + str(user) + "     Measure: " + activity)
+    # plt.suptitle("User_in_role_id: " + str(user) + "     Measure: " + activity)
     # plt.rcParams["figure.figsize"] = [25.0, 15.0]
 #     plt.savefig('Plots/transitions/''Transition_citizen_id_' + str(user)+ '_activity_'+ activity +'.png')
     plt.tight_layout()
