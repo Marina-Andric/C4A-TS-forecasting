@@ -16,16 +16,16 @@ import numpy as np
 # for reproducibility
 np.random.seed(0)
 
-data = get_data(130)
+data = get_data(110)
 activities = ['interval_start', 'physicalactivity_calories', 'physicalactivity_intense_time', 'physicalactivity_moderate_time', 'physicalactivity_soft_time', 'sleep_awake_time', 'sleep_deep_time', 'sleep_light_time', 'sleep_tosleep_time', 'sleep_wakeup_num', 'walk_distance', 'walk_steps']
 pivoted_data = pivot_data(data)[activities]
 
 # print (pivoted_data.describe())
-# pivoted_data.to_csv('data_bhx_130_newest.csv', sep='\t')
+pivoted_data.to_csv('data_bhx_110.csv', sep='\t')
 
 prepared_data = prepare_dataset(pivoted_data)
 # print (prepared_data)
-prepared_data.to_csv('prepared data cr130.csv', sep='\t')
+prepared_data.to_csv('prepared data cr110.csv', sep='\t')
 
 # Print main statistics per feature
 # print (prepared_data.describe())
