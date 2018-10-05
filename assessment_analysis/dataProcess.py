@@ -172,231 +172,235 @@ from
     '''
     sql = '''
 WITH q0_gef AS (
-	SELECT
-		uir. ID AS user_in_role_id,
-		ti. ID AS time_interval_id,
-		ti.interval_start,
-		ti."id" AS timeid,
-		gef.gef_type_id,
-		gef.gef_value,
-		nui.nui_type_id,
-		nui.nui_value
-	FROM
-		city4age_sr.geriatric_factor_value AS gef
-	JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
-	JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
-	AND uir.pilot_code = pdv.pilot_code
-	JOIN city4age_sr.md_pilot_detection_variable AS pdv1 ON pdv.detection_variable_id = pdv1.derived_detection_variable_id
-	AND uir.pilot_code = pdv1.pilot_code
-	JOIN city4age_sr.numeric_indicator_value AS nui ON gef.time_interval_id = nui.time_interval_id
-	AND gef.user_in_role_id = nui.user_in_role_id
-	AND nui.nui_type_id = pdv1.detection_variable_id
-	JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
-),
- q0_ges AS (
-	SELECT
-		uir. ID AS user_in_role_id,
-		ti. ID AS time_interval_id,
-		ti.interval_start,
-		ti."id" AS timeid,
-		gef.gef_type_id,
-		gef.gef_value,
-		nui.nui_type_id,
-		nui.nui_value
-	FROM
-		city4age_sr.geriatric_factor_value AS gef
-	JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
-	JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
-	AND uir.pilot_code = pdv.pilot_code
-	JOIN city4age_sr.numeric_indicator_value AS nui ON gef.time_interval_id = nui.time_interval_id
-	AND gef.user_in_role_id = nui.user_in_role_id
-	AND nui.nui_type_id = pdv.detection_variable_id
-	JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
-),
- q0 AS (
-	SELECT
-		*
-	FROM
-		q0_gef
-	UNION
-		SELECT
-			*
-		FROM
-			q0_ges
-),
- q1_gef AS (
-	SELECT
-		gef.user_in_role_id,
-		ti. ID AS time_interval_id,
-		ti.interval_start,
-		dv.detection_variable_name AS gef_name,
-		gef.gef_value,
-		gef_type_id,
-		-- nui.nui_type_id,
-		dv2.detection_variable_name AS nui_name,
-		nui.nui_value,
-		nui.nui_type_id,
-		-- nui.id as nuiid,
-		assessment.risk_status,
-		assessment.data_validity_status,
-		assessment.assessment_comment
-	FROM
-		city4age_sr.assessment
-	JOIN city4age_sr.assessed_gef_value_set AS agef ON assessment. ID = agef.assessment_id
-	JOIN city4age_sr.geriatric_factor_value AS gef ON agef.gef_value_id = gef. ID
-	JOIN city4age_sr.cd_detection_variable AS dv ON gef.gef_type_id = dv. ID
-	JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
-	JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
-	AND uir.pilot_code = pdv.pilot_code
-	JOIN city4age_sr.cd_detection_variable dv1 ON pdv.detection_variable_id = dv1. ID -- and pdv.detection_variable_type <> 'mea'
-	LEFT JOIN city4age_sr.md_pilot_detection_variable AS pdv1 ON pdv.detection_variable_id = pdv1.derived_detection_variable_id
-	AND uir.pilot_code = pdv1.pilot_code
-	INNER JOIN city4age_sr.cd_detection_variable dv2 ON dv2. ID = pdv1.detection_variable_id
-	AND dv2.detection_variable_type = 'nui'
-	JOIN city4age_sr.numeric_indicator_value AS nui ON nui.user_in_role_id = gef.user_in_role_id
-	AND gef.time_interval_id = nui.time_interval_id
-	AND pdv1.detection_variable_id = nui.nui_type_id -- 	OR pdv1.detection_variable_id = nui.nui_type_id
-	JOIN city4age_sr.cd_detection_variable AS dv3 ON dv3. ID = nui_type_id
-	JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
-	WHERE
-		gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
-	ORDER BY
-		gef.user_in_role_id
-),
- q1_ges AS (
-	SELECT
-		gef.user_in_role_id,
-		ti. ID AS time_interval_id,
-		ti.interval_start,
-		dv.detection_variable_name AS gef_name,
-		gef.gef_value,
-		gef_type_id,
-		-- nui.nui_type_id,
-		dv1.detection_variable_name AS nui_name,
-		nui.nui_value,
-		nui.nui_type_id,
-		-- nui.id as nuiid,
-		assessment.risk_status,
-		assessment.data_validity_status,
-		assessment.assessment_comment
-	FROM
-		city4age_sr.assessment
-	JOIN city4age_sr.assessed_gef_value_set AS agef ON assessment. ID = agef.assessment_id
-	JOIN city4age_sr.geriatric_factor_value AS gef ON agef.gef_value_id = gef. ID
-	JOIN city4age_sr.cd_detection_variable AS dv ON gef.gef_type_id = dv. ID
-	JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
-	JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
-	AND uir.pilot_code = pdv.pilot_code -- 	join cd_detection_variable dv1 on pdv.detection_variable_id = dv1.id 
-	-- and pdv.detection_variable_type <> 'mea'
-	JOIN city4age_sr.numeric_indicator_value AS nui ON nui.user_in_role_id = gef.user_in_role_id
-	AND gef.time_interval_id = nui.time_interval_id
-	AND pdv.detection_variable_id = nui.nui_type_id
-	JOIN city4age_sr.cd_detection_variable AS dv1 ON dv1. ID = nui_type_id
-	JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
-	WHERE
-		gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
-	ORDER BY
-		gef.user_in_role_id
-),
- q1 AS (
-	SELECT
-		*
-	FROM
-		q1_gef
-	UNION
-		SELECT
-			*
-		FROM
-			q1_ges
-),
- gef_dif AS (
-	SELECT DISTINCT
-		tab1.user_in_role_id,
-		tab1.gef_type_id,
-		tab1.time_interval_id,
-		tab1.interval_start,
-		tab2.interval_start AS interval_start_prev,
-		tab1.gef_value,
-		tab2.gef_value AS gef_value_prev
-	FROM
-		q1 AS tab1
-	JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
-	AND tab1.gef_type_id = tab2.gef_type_id
-	WHERE
-		tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
-),
- nui_dif AS (
-	SELECT
-		tab1.user_in_role_id,
-		tab1.nui_type_id,
-		tab2.gef_type_id,
-		tab1.time_interval_id,
-		tab1.interval_start,
-		tab1.nui_name,
-		tab2.interval_start AS interval_start_prev,
-		tab1.nui_value,
-		tab2.nui_value AS nui_value_prev
-	FROM
-		q1 AS tab1
-	JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
-	AND tab1.gef_type_id = tab2.gef_type_id
-	AND tab1.nui_type_id = tab2.nui_type_id
-	WHERE
-		tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
-) SELECT DISTINCT
-	q1.user_in_role_id,
-	q1.interval_start,
-	-- 	q1.time_interval_id,
-	q1.gef_name,
-	q1.gef_value,
-	gef_dif.gef_value - gef_dif.gef_value_prev AS gef_difference,
-	q1.nui_name,
-	q1.nui_value,
-	-- 	q1.nui_type_id,
-	nui_dif.nui_value - nui_dif.nui_value_prev AS nui_difference,
-	CASE
-WHEN q1.user_in_role_id = 129
-AND q1.nui_value = 1305.07 THEN
-	'A'
-ELSE
-	q1.risk_status
-END AS risk_status,
- q1.data_validity_status,
- q1.assessment_comment
-FROM
-	q1
-JOIN gef_dif ON q1.user_in_role_id = gef_dif.user_in_role_id
-AND q1.gef_type_id = gef_dif.gef_type_id
-AND q1.time_interval_id = gef_dif.time_interval_id
-JOIN nui_dif ON q1.user_in_role_id = nui_dif.user_in_role_id
-AND q1.time_interval_id = nui_dif.time_interval_id
-AND nui_dif.gef_type_id = q1.gef_type_id
-AND q1.nui_type_id = nui_dif.nui_type_id
-WHERE
-	(
-		q1.gef_name = 'motility'
-		OR q1.gef_name = 'walking'
-	)
-AND q1.assessment_comment NOT LIKE '%August%'
-AND q1.assessment_comment NOT LIKE '%august%'
-AND q1.assessment_comment LIKE '% %'
-AND q1.assessment_comment NOT LIKE '%Compared to previous month the number of steps increased whereas distance dropped%'
-AND q1.assessment_comment NOT LIKE '%Values in July 2018 plummeted%'
-AND q1.assessment_comment NOT LIKE '%Compared to February 2018 both walking steps and distance rose%'
-AND q1.assessment_comment NOT LIKE '%Compared to February 2018 values rose consistently%'
-AND q1.assessment_comment NOT LIKE '%Slight increase in both steps and distance compared to April 2018%'
-AND q1.assessment_comment NOT LIKE '%In July 2018 sharp drop in values%'
-AND q1.assessment_comment NOT LIKE '%Compared to previous month soft activity slightly increased with a sharp decrease in both moderate and intense activity%'
-AND q1.assessment_comment NOT LIKE '%Sharp reduction in walking steps and distance for July 2018%'
-AND q1.assessment_comment NOT LIKE '%Values went down in July 2018%'
-ORDER BY
-	nui_value
+        SELECT
+            uir. ID AS user_in_role_id,
+            ti. ID AS time_interval_id,
+            ti.interval_start,
+            ti."id" AS timeid,
+            gef.gef_type_id,
+            gef.gef_value,
+            nui.nui_type_id,
+            nui.nui_value
+        FROM
+            city4age_sr.geriatric_factor_value AS gef
+        JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
+        AND uir.pilot_code = pdv.pilot_code
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv1 ON pdv.detection_variable_id = pdv1.derived_detection_variable_id
+        AND uir.pilot_code = pdv1.pilot_code
+        JOIN city4age_sr.numeric_indicator_value AS nui ON gef.time_interval_id = nui.time_interval_id
+        AND gef.user_in_role_id = nui.user_in_role_id
+        AND nui.nui_type_id = pdv1.detection_variable_id
+        JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+    ),
+     q0_ges AS (
+        SELECT
+            uir. ID AS user_in_role_id,
+            ti. ID AS time_interval_id,
+            ti.interval_start,
+            ti."id" AS timeid,
+            gef.gef_type_id,
+            gef.gef_value,
+            nui.nui_type_id,
+            nui.nui_value
+        FROM
+            city4age_sr.geriatric_factor_value AS gef
+        JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
+        AND uir.pilot_code = pdv.pilot_code
+        JOIN city4age_sr.numeric_indicator_value AS nui ON gef.time_interval_id = nui.time_interval_id
+        AND gef.user_in_role_id = nui.user_in_role_id
+        AND nui.nui_type_id = pdv.detection_variable_id
+        JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+    ),
+     q0 AS (
+        SELECT
+            *
+        FROM
+            q0_gef
+        UNION
+            SELECT
+                *
+            FROM
+                q0_ges
+    ),
+     q1_gef AS (
+        SELECT
+            gef.user_in_role_id,
+            ti. ID AS time_interval_id,
+            ti.interval_start,
+            dv.detection_variable_name AS gef_name,
+            gef.gef_value,
+            gef_type_id,
+            -- nui.nui_type_id,
+            dv2.detection_variable_name AS nui_name,
+            nui.nui_value,
+            nui.nui_type_id,
+            -- nui.id as nuiid,
+            assessment.risk_status,
+            assessment.data_validity_status,
+            assessment.assessment_comment
+        FROM
+            city4age_sr.assessment
+        JOIN city4age_sr.assessed_gef_value_set AS agef ON assessment. ID = agef.assessment_id
+        JOIN city4age_sr.geriatric_factor_value AS gef ON agef.gef_value_id = gef. ID
+        JOIN city4age_sr.cd_detection_variable AS dv ON gef.gef_type_id = dv. ID
+        JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
+        AND uir.pilot_code = pdv.pilot_code
+        JOIN city4age_sr.cd_detection_variable dv1 ON pdv.detection_variable_id = dv1. ID -- and pdv.detection_variable_type <> 'mea'
+        LEFT JOIN city4age_sr.md_pilot_detection_variable AS pdv1 ON pdv.detection_variable_id = pdv1.derived_detection_variable_id
+        AND uir.pilot_code = pdv1.pilot_code
+        INNER JOIN city4age_sr.cd_detection_variable dv2 ON dv2. ID = pdv1.detection_variable_id
+        AND dv2.detection_variable_type = 'nui'
+        JOIN city4age_sr.numeric_indicator_value AS nui ON nui.user_in_role_id = gef.user_in_role_id
+        AND gef.time_interval_id = nui.time_interval_id
+        AND pdv1.detection_variable_id = nui.nui_type_id -- 	OR pdv1.detection_variable_id = nui.nui_type_id
+        JOIN city4age_sr.cd_detection_variable AS dv3 ON dv3. ID = nui_type_id
+        JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+        WHERE
+            gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
+        ORDER BY
+            gef.user_in_role_id
+    ),
+     q1_ges AS (
+        SELECT
+            gef.user_in_role_id,
+            ti. ID AS time_interval_id,
+            ti.interval_start,
+            dv.detection_variable_name AS gef_name,
+            gef.gef_value,
+            gef_type_id,
+            -- nui.nui_type_id,
+            dv1.detection_variable_name AS nui_name,
+            nui.nui_value,
+            nui.nui_type_id,
+            -- nui.id as nuiid,
+            assessment.risk_status,
+            assessment.data_validity_status,
+            assessment.assessment_comment
+        FROM
+            city4age_sr.assessment
+        JOIN city4age_sr.assessed_gef_value_set AS agef ON assessment. ID = agef.assessment_id
+        JOIN city4age_sr.geriatric_factor_value AS gef ON agef.gef_value_id = gef. ID
+        JOIN city4age_sr.cd_detection_variable AS dv ON gef.gef_type_id = dv. ID
+        JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
+        AND uir.pilot_code = pdv.pilot_code -- 	join cd_detection_variable dv1 on pdv.detection_variable_id = dv1.id 
+        -- and pdv.detection_variable_type <> 'mea'
+        JOIN city4age_sr.numeric_indicator_value AS nui ON nui.user_in_role_id = gef.user_in_role_id
+        AND gef.time_interval_id = nui.time_interval_id
+        AND pdv.detection_variable_id = nui.nui_type_id
+        JOIN city4age_sr.cd_detection_variable AS dv1 ON dv1. ID = nui_type_id
+        JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+        WHERE
+            gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
+        ORDER BY
+            gef.user_in_role_id
+    ),
+     q1 AS (
+        SELECT
+            *
+        FROM
+            q1_gef
+        UNION
+            SELECT
+                *
+            FROM
+                q1_ges
+    ),
+     gef_dif AS (
+        SELECT DISTINCT
+            tab1.user_in_role_id,
+            tab1.gef_type_id,
+            tab1.time_interval_id,
+            tab1.interval_start,
+            tab2.interval_start AS interval_start_prev,
+            tab1.gef_value,
+            tab2.gef_value AS gef_value_prev
+        FROM
+            q1 AS tab1
+        JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
+        AND tab1.gef_type_id = tab2.gef_type_id
+        WHERE
+            tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
+    ),
+     nui_dif AS (
+        SELECT
+            tab1.user_in_role_id,
+            tab1.nui_type_id,
+            tab2.gef_type_id,
+            tab1.time_interval_id,
+            tab1.interval_start,
+            tab1.nui_name,
+            tab2.interval_start AS interval_start_prev,
+            tab1.nui_value,
+            tab2.nui_value AS nui_value_prev
+        FROM
+            q1 AS tab1
+        JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
+        AND tab1.gef_type_id = tab2.gef_type_id
+        AND tab1.nui_type_id = tab2.nui_type_id
+        WHERE
+            tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
+    )SELECT DISTINCT
+        q1.user_in_role_id,
+        q1.interval_start,
+        -- 	q1.time_interval_id,
+        q1.gef_name,
+        q1.gef_value,
+        gef_dif.gef_value - gef_dif.gef_value_prev AS gef_difference,
+        q1.nui_name,
+        q1.nui_value,
+        -- 	q1.nui_type_id,
+        nui_dif.nui_value - nui_dif.nui_value_prev AS nui_difference,
+       -- q1.risk_status,
+        CASE
+        WHEN q1.user_in_role_id = 129
+        AND q1.gef_value = 1.5 
+          THEN
+            'A'
+        ELSE
+            q1.risk_status
+        END AS risk_status,
+     q1.data_validity_status,
+     q1.assessment_comment
+    FROM
+        q1
+    JOIN gef_dif ON q1.user_in_role_id = gef_dif.user_in_role_id
+    AND q1.gef_type_id = gef_dif.gef_type_id
+    AND q1.time_interval_id = gef_dif.time_interval_id
+    JOIN nui_dif ON q1.user_in_role_id = nui_dif.user_in_role_id
+    AND q1.time_interval_id = nui_dif.time_interval_id
+    AND nui_dif.gef_type_id = q1.gef_type_id
+    AND q1.nui_type_id = nui_dif.nui_type_id
+    WHERE
+        (
+            q1.gef_name = 'motility'
+            OR q1.gef_name = 'walking'
+        )
+    AND q1.assessment_comment NOT LIKE '%August%'
+    AND q1.assessment_comment NOT LIKE '%august%'
+    AND q1.assessment_comment LIKE '% %'
+    AND q1.assessment_comment NOT LIKE '%Compared to previous month the number of steps increased whereas distance dropped%'
+    AND q1.assessment_comment NOT LIKE '%Values in July 2018 plummeted%'
+    AND q1.assessment_comment NOT LIKE '%Compared to February 2018 both walking steps and distance rose%'
+    AND q1.assessment_comment NOT LIKE '%Compared to February 2018 values rose consistently%'
+    AND q1.assessment_comment NOT LIKE '%Slight increase in both steps and distance compared to April 2018%'
+    AND q1.assessment_comment NOT LIKE '%In July 2018 sharp drop in values%'
+    AND q1.assessment_comment NOT LIKE '%Compared to previous month soft activity slightly increased with a sharp decrease in both moderate and intense activity%'
+    AND q1.assessment_comment NOT LIKE '%Sharp reduction in walking steps and distance for July 2018%'
+    AND q1.assessment_comment NOT LIKE '%Values went down in July 2018%'
+--    and not(q1.assessment_comment like '%Compared to previous month sharp drop in both steps and distance%' and q1.user_in_role_id = 129)
+    ORDER BY
+        nui_value
     '''
     # where risk_status in ('W', 'A')
     cur = conn.cursor()
     cur.execute(sql)
     df = pd.DataFrame(cur.fetchall())
     df.columns = [item[0] for item in cur.description]
+    # df.to_csv('Images/output.csv')
     return df
 
 def prepare_data(data):
@@ -419,6 +423,7 @@ def get_motility_data(data):
     motility_data=motility_data.sort_values('risk_status')
     motility_data.reset_index(drop= True, inplace=True)
     motility_data = motility_data.iloc[:,2:]
+    # motility_data.to_csv('Images/output.csv')
     return motility_data
 
 

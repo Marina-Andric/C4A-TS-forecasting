@@ -33,10 +33,10 @@ def scatter_with_color_dimension_graph(feature, target, layout_labels):
     data = [trace1]
     fig = Figure(data=data, layout=layout)
     # plot_url = py.plot(fig)
-    py.image.save_as(fig, filename='Images\\' + layout_labels[1] + '_Density.png')
+    py.image.save_as(fig, filename='Images\\DensityGraphs_conf2\\' + layout_labels[1] + '_Density.png')
 
 # plotting in two dimensions
-def plot_decision_regions(X, y, classifier, labels, resolution = 0.02):
+def plot_decision_regions(X, y, classifier, labels, name, resolution = 0.02):
     markers = ('s', 'x', 'o', '^', 'v')
     colors = ('lightgreen', 'red', 'orange', 'gray', 'cyan')
 
@@ -63,5 +63,5 @@ def plot_decision_regions(X, y, classifier, labels, resolution = 0.02):
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.legend(loc = 'upper left')
-    plt.savefig('Images\decision_regions.png')
+    plt.savefig('Images\decision_regions' + '_' + name + '.png')
 
