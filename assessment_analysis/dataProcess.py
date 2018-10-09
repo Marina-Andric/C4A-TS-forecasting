@@ -391,6 +391,8 @@ WITH q0_gef AS (
     AND q1.assessment_comment NOT LIKE '%Compared to previous month soft activity slightly increased with a sharp decrease in both moderate and intense activity%'
     AND q1.assessment_comment NOT LIKE '%Sharp reduction in walking steps and distance for July 2018%'
     AND q1.assessment_comment NOT LIKE '%Values went down in July 2018%'
+    AND q1.assessment_comment NOT LIKE '%only four%'
+    AND q1.assessment_comment NOT LIKE '%Discuss with geriatrician%'
 --    and not(q1.assessment_comment like '%Compared to previous month sharp drop in both steps and distance%' and q1.user_in_role_id = 129)
     ORDER BY
         nui_value
@@ -424,6 +426,7 @@ def get_motility_data(data):
     motility_data.reset_index(drop= True, inplace=True)
     motility_data = motility_data.iloc[:,2:]
     # motility_data.to_csv('Images/output.csv')
+    # print (motility_data)
     return motility_data
 
 
