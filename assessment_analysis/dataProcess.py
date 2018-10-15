@@ -171,7 +171,7 @@ from
    where data_validity_status = 'V' and q1.nui_name like '%avg%'
     '''
     sql = '''
-WITH q0_gef AS (
+    WITH q0_gef AS (
         SELECT
             uir. ID AS user_in_role_id,
             ti. ID AS time_interval_id,
@@ -192,6 +192,9 @@ WITH q0_gef AS (
         AND gef.user_in_role_id = nui.user_in_role_id
         AND nui.nui_type_id = pdv1.detection_variable_id
         JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+        WHERE
+            gef.gef_type_id IN (504, 514) -- walking or motility
+        AND uir.pilot_code LIKE '%bhx%'
     ),
      q0_ges AS (
         SELECT
@@ -212,6 +215,9 @@ WITH q0_gef AS (
         AND gef.user_in_role_id = nui.user_in_role_id
         AND nui.nui_type_id = pdv.detection_variable_id
         JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+        WHERE
+            gef.gef_type_id IN (504, 514) -- walking or motility
+        AND uir.pilot_code LIKE '%bhx%'
     ),
      q0 AS (
         SELECT
@@ -259,7 +265,8 @@ WITH q0_gef AS (
         JOIN city4age_sr.cd_detection_variable AS dv3 ON dv3. ID = nui_type_id
         JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
         WHERE
-            gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
+            uir.pilot_code LIKE '%bhx%' --  and dv.detection_variable_name = 'physical_activity'
+        AND gef.gef_type_id = 504 -- motilitiy gef
         ORDER BY
             gef.user_in_role_id
     ),
@@ -294,7 +301,8 @@ WITH q0_gef AS (
         JOIN city4age_sr.cd_detection_variable AS dv1 ON dv1. ID = nui_type_id
         JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
         WHERE
-            gef.user_in_role_id > 100 --  and dv.detection_variable_name = 'physical_activity'
+            uir.pilot_code LIKE '%bhx%'
+        AND gef.gef_type_id = 514 -- walking gef
         ORDER BY
             gef.user_in_role_id
     ),
@@ -320,7 +328,7 @@ WITH q0_gef AS (
             tab2.gef_value AS gef_value_prev
         FROM
             q1 AS tab1
-        JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
+        JOIN q0 AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
         AND tab1.gef_type_id = tab2.gef_type_id
         WHERE
             tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
@@ -338,12 +346,13 @@ WITH q0_gef AS (
             tab2.nui_value AS nui_value_prev
         FROM
             q1 AS tab1
-        JOIN q0_gef AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
+        JOIN q0 AS tab2 ON tab1.user_in_role_id = tab2.user_in_role_id
         AND tab1.gef_type_id = tab2.gef_type_id
         AND tab1.nui_type_id = tab2.nui_type_id
         WHERE
             tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
-    )SELECT DISTINCT
+    ) SELECT DISTINCT
+    -- count (*) as cnt,
         q1.user_in_role_id,
         q1.interval_start,
         -- 	q1.time_interval_id,
@@ -354,48 +363,73 @@ WITH q0_gef AS (
         q1.nui_value,
         -- 	q1.nui_type_id,
         nui_dif.nui_value - nui_dif.nui_value_prev AS nui_difference,
-       -- q1.risk_status,
-        CASE
-        WHEN q1.user_in_role_id = 129
-        AND q1.gef_value = 1.5 
-          THEN
-            'A'
-        ELSE
-            q1.risk_status
-        END AS risk_status,
-     q1.data_validity_status,
-     q1.assessment_comment
+        q1.risk_status,
+        --         CASE
+        --         WHEN q1.user_in_role_id = 129
+        --         AND q1.gef_value = 1.5 
+        --           THEN
+        --             'A'
+        --         ELSE
+        --             q1.risk_status
+        --         END AS risk_status,
+        q1.data_validity_status,
+        q1.assessment_comment 
     FROM
         q1
-    JOIN gef_dif ON q1.user_in_role_id = gef_dif.user_in_role_id
-    AND q1.gef_type_id = gef_dif.gef_type_id
-    AND q1.time_interval_id = gef_dif.time_interval_id
-    JOIN nui_dif ON q1.user_in_role_id = nui_dif.user_in_role_id
-    AND q1.time_interval_id = nui_dif.time_interval_id
-    AND nui_dif.gef_type_id = q1.gef_type_id
-    AND q1.nui_type_id = nui_dif.nui_type_id
-    WHERE
-        (
-            q1.gef_name = 'motility'
-            OR q1.gef_name = 'walking'
-        )
+    JOIN gef_dif ON (
+        q1.user_in_role_id = gef_dif.user_in_role_id
+        AND q1.gef_type_id = gef_dif.gef_type_id
+        AND q1.time_interval_id = gef_dif.time_interval_id
+    )
+    JOIN nui_dif ON (
+        q1.user_in_role_id = nui_dif.user_in_role_id
+        AND nui_dif.gef_type_id = q1.gef_type_id
+        AND q1.nui_type_id = nui_dif.nui_type_id
+        AND q1.time_interval_id = nui_dif.time_interval_id
+    )
     AND q1.assessment_comment NOT LIKE '%August%'
     AND q1.assessment_comment NOT LIKE '%august%'
-    AND q1.assessment_comment LIKE '% %'
-    AND q1.assessment_comment NOT LIKE '%Compared to previous month the number of steps increased whereas distance dropped%'
-    AND q1.assessment_comment NOT LIKE '%Values in July 2018 plummeted%'
-    AND q1.assessment_comment NOT LIKE '%Compared to February 2018 both walking steps and distance rose%'
-    AND q1.assessment_comment NOT LIKE '%Compared to February 2018 values rose consistently%'
-    AND q1.assessment_comment NOT LIKE '%Slight increase in both steps and distance compared to April 2018%'
-    AND q1.assessment_comment NOT LIKE '%In July 2018 sharp drop in values%'
-    AND q1.assessment_comment NOT LIKE '%Compared to previous month soft activity slightly increased with a sharp decrease in both moderate and intense activity%'
-    AND q1.assessment_comment NOT LIKE '%Sharp reduction in walking steps and distance for July 2018%'
-    AND q1.assessment_comment NOT LIKE '%Values went down in July 2018%'
-    AND q1.assessment_comment NOT LIKE '%only four%'
+    AND q1.assessment_comment LIKE '% %' -- assessment at least a space
+    AND q1.assessment_comment NOT LIKE '%Compared to previous month the number of steps increased whereas distance dropped%' -- duplicate
+    AND q1.assessment_comment NOT LIKE '%Values in July 2018 plummeted%' -- there already is A assessment in July 2018
+    AND q1.assessment_comment NOT LIKE '%Compared to February 2018 both walking steps and distance rose%' -- duplicate
+    AND q1.assessment_comment NOT LIKE '%Slight increase in both steps and distance compared to April 2018%' -- duplicate assessment for uId 104
+    --    AND q1.assessment_comment not LIKE '%In July 2018 sharp drop in values%' -- attached to July uId 114
+    AND q1.assessment_comment NOT LIKE '%Compared to previous month soft activity slightly increased with a sharp decrease in both moderate and intense activity%' -- irrelevant
+    AND q1.assessment_comment NOT LIKE '%Sharp reduction in walking steps and distance for July 2018%' -- two assessments A, W in July2018 for uId 117
+    AND q1.assessment_comment NOT LIKE '%Values went down in July 2018%' -- there is already A for July 2018 uid 126
+    AND NOT (
+        q1.assessment_comment LIKE '%Sharp drop in values compared to previous month%'
+        AND q1.user_in_role_id = 117
+    ) -- removed W for July2018 uid 117
+    AND q1.assessment_comment NOT LIKE '%only four days%'
     AND q1.assessment_comment NOT LIKE '%Discuss with geriatrician%'
---    and not(q1.assessment_comment like '%Compared to previous month sharp drop in both steps and distance%' and q1.user_in_role_id = 129)
+    AND q1.assessment_comment NOT LIKE '%Slight reduction in values compared to June of the same year%' -- redundant assessment also there is no June 2018
+    AND q1.assessment_comment NOT LIKE '%Values are the same as March of the same year%' -- redundant, there is Walking assessment for Feb18
+    AND q1.assessment_comment NOT LIKE '%Values plummeted compared to February of the same year%' -- redundant, moreover this is said for Jan18
+    AND q1.assessment_comment NOT LIKE '%Compared to previous month sharp drop in both steps and distance%'
+    -- and q1.assessment_comment  like '%Values for July 2018 are close to zero%' -- fixed in assessed_gef_value_set
+    and q1.assessment_comment not like '%slight reduction in the number of steps%' -- this is a duplicate
+    -- and q1.assessment_comment like '%Values in July 2018 declined%' -- fixed in assessed_gef_value_set
+    and q1.assessment_comment not like '%Sharp drop in both the number of steps and distance compared to July 2017%' --duplicate
+    and q1.assessment_comment not like '%Slight reduction in walking steps%' -- redundant
+    -- group BY
+    -- 	q1.user_in_role_id,
+    -- 	q1.interval_start,
+    -- 	q1.gef_name,
+    -- 	q1.gef_value,
+    -- 	gef_difference,
+    -- 	q1.nui_name,
+    -- 	q1.nui_value,
+    -- 	nui_difference,
+    -- 	q1.risk_status,
+    -- 	q1.data_validity_status,
+    -- 	q1.assessment_comment 
+    -- -- having count (*) > 1
     ORDER BY
-        nui_value
+    -- cnt,
+        user_in_role_id,
+        interval_start
     '''
     # where risk_status in ('W', 'A')
     cur = conn.cursor()
@@ -405,28 +439,36 @@ WITH q0_gef AS (
     # df.to_csv('Images/output.csv')
     return df
 
+
 def prepare_data(data):
     data = data[data['data_validity_status']=='V']
     risk_mapping = {'A': 2, 'W':1, 'N': 0}
     nui_name_mapping = {label : idx for idx, label in enumerate(np.unique(data['nui_name']))}
     # data['nui_name'] = data['nui_name'].map(nui_name_mapping)
-    data['risk_status'] = data['risk_status'].map(risk_mapping)
-    data['interval_start'] = [datum.strftime('%Y-%m-%d') for datum in data['interval_start']]
-    data['interval_start'] = [datetime.datetime.strptime(datum, '%Y-%m-%d') for datum in data['interval_start']]
-    data = data[['user_in_role_id', 'interval_start', 'gef_name', 'gef_value', 'gef_difference', 'nui_name', 'nui_value', 'nui_difference', 'risk_status', 'data_validity_status']]
+    data.loc[:,'risk_status'] = data['risk_status'].map(risk_mapping)
+    data.loc[:,'interval_start'] = [datum.strftime('%Y-%m-%d') for datum in data['interval_start']]
+    data.loc[:,'interval_start'] = [datetime.datetime.strptime(datum, '%Y-%m-%d') for datum in data['interval_start']]
+    data = data[['user_in_role_id', 'interval_start', 'gef_name', 'gef_value', 'gef_difference', 'nui_name', 'nui_value', 'nui_difference', 'risk_status', 'data_validity_status', 'assessment_comment']]
     return data
+
+
+def to_xlxs(data):
+    writer = pd.ExcelWriter('assessments_nuis_new.xlsx', engine='xlsxwriter')
+    data.to_excel(writer, sheet_name='Sheet1')
+    writer.save()
+
 
 def get_motility_data(data):
     motility_data = data[(data['gef_name']=='motility') | (data['gef_name']=='walking')]
-    motility_data = pd.pivot_table(motility_data, index =['interval_start', 'user_in_role_id', 'risk_status', 'gef_value', 'gef_difference'],
+    motility_data = pd.pivot_table(motility_data, index =['interval_start', 'user_in_role_id', 'assessment_comment', 'risk_status', 'gef_value', 'gef_difference'],
                                    columns = 'nui_name', values= ['nui_value', 'nui_difference'], aggfunc= np.max)
     motility_data.columns = [f'{j}_{i}' for i, j in motility_data.columns]
     motility_data = motility_data.reset_index()
     motility_data=motility_data.sort_values('risk_status')
     motility_data.reset_index(drop= True, inplace=True)
-    motility_data = motility_data.iloc[:,2:]
-    # motility_data.to_csv('Images/output.csv')
-    # print (motility_data)
-    return motility_data
+    # to_xlxs(motility_data)
+    return motility_data.iloc[:,3:]
+
+
 
 

@@ -79,3 +79,10 @@ def plot_bubble_chart(data, variables, name):
     plt.ylabel(variables[1])
     plt.grid()
     plt.savefig('Images\\bubble_chart_' + name + '.png')
+
+
+def plot_density_graph_feature(data):
+    for feature in data.columns[1:]:
+        labels = ["Number of Observations", feature, feature]
+        scatter_with_color_dimension_graph(data[feature], data['risk_status'], labels)
+
