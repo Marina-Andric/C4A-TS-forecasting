@@ -4,12 +4,13 @@ from sklearn.model_selection import StratifiedKFold, KFold
 import numpy as np
 
 
-def get_prediction_accuracy(model, X, y):
+def get_prediction_accuracy(model, X, y, k=7):
     # print ("Multinomial Logistic regression Train Accuracy :: ", accuracy_score(y_train, mul_lr.predict(X_train_std)))
     # print ("Multinomial Logistic regression Test Accuracy :: ", accuracy_score(y, model.predict(X)))
     # y_score = mul_lr.predict(X_test_std)
     # print ('auc score: ', auc(np.array(y_test.values), np.array(y_score), reorder='deprecated'))
-    cv_results = cross_validate(model, X, y, cv=StratifiedKFold(9, True, 1), return_train_score=False)
+    cv_results = cross_validate(model, X, y, cv=StratifiedKFold(k, True, 1), return_train_score=False)
     # print (cv_results.keys())
     print (cv_results['test_score'])
-    print("cross validation: ", np.mean(cv_results['test_score']))
+    print("mean test_score: ", np.mean(cv_results['test_score']))
+    print("std test_score:", np.std(cv_results['test_score']))

@@ -6,10 +6,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.metrics import accuracy_score, roc_auc_score, average_precision_score, auc
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
 
 import pandas as pd
 import numpy as np
 import plotting as pltg
+
 
 def compare_dfs(data1, data2):
     prep_data1 = dp.prepare_data(data1)
@@ -18,7 +20,8 @@ def compare_dfs(data1, data2):
     motility_data2 = dp.get_motility_data(prep_data2)
 
     motility_data_all = pd.concat([motility_data1.set_index(['interval_start', 'user_in_role_id', 'risk_status']),
-                                   motility_data2.set_index(['interval_start', 'user_in_role_id', 'risk_status'])], axis = 'columns', keys = ['first', 'second'])
+                                   motility_data2.set_index(['interval_start', 'user_in_role_id', 'risk_status'])],
+                                  axis='columns', keys=['first', 'second'])
     print(motility_data_all)
 
 
@@ -33,12 +36,12 @@ def log_reg(motility_data, features):
     X_train_std = sc.transform(X_train)
     X_test_std = sc.transform(X_test)
 
-    mul_lr = LogisticRegression(multi_class='multinomial', solver = 'newton-cg', C = 1000.0, random_state=0)
+    mul_lr = LogisticRegression(multi_class='multinomial', solver='newton-cg', C=1000.0, random_state=0)
     mul_lr.fit(X_train_std, y_train)
 
     X_combined_std = np.vstack((X_train_std, X_test_std))
     y_combined = np.hstack((y_train, y_test))
-    print ('Logistic regression accuracy: ')
+    print('Logistic regression accuracy: ')
     ma.get_prediction_accuracy(mul_lr, X_combined_std, y_combined)
 
 
@@ -58,7 +61,7 @@ def make_plots():
     X_train_std = sc.transform(X_train)
     X_test_std = sc.transform(X_test)
 
-    mul_lr = LogisticRegression(multi_class='multinomial', solver = 'newton-cg', C = 1000.0, random_state=0)
+    mul_lr = LogisticRegression(multi_class='multinomial', solver='newton-cg', C=1000.0, random_state=0)
     mul_lr.fit(X_train_std, y_train)
 
     X_combined_std = np.vstack((X_train_std, X_test_std))
@@ -72,34 +75,80 @@ def make_plots():
 
 def selectFeatures(motility_data):
     features_4 = ['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-                'avg_walk_steps_nui_value']
+                  'avg_walk_steps_nui_value']
     features_8 = ['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-                'avg_walk_steps_nui_value',
+                  'avg_walk_steps_nui_value',
                   'std_walk_distance_nui_difference', 'std_walk_distance_nui_value', 'std_walk_steps_nui_difference',
                   'std_walk_steps_nui_value']
 
     features_old = ['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-                'avg_walk_steps_nui_value',
-                  'std_walk_distance_nui_difference', 'std_walk_distance_nui_value', 'std_walk_steps_nui_difference',
-                  'std_walk_steps_nui_value',
-                'best_walk_distance_nui_difference', 'best_walk_distance_nui_value', 'best_walk_steps_nui_difference',
-                'best_walk_steps_nui_value',
-                  'delta_walk_distance_nui_difference', 'delta_walk_distance_nui_value', 'delta_walk_steps_nui_difference',
-                  'delta_walk_steps_nui_value']
+                    'avg_walk_steps_nui_value',
+                    'std_walk_distance_nui_difference', 'std_walk_distance_nui_value', 'std_walk_steps_nui_difference',
+                    'std_walk_steps_nui_value',
+                    'best_walk_distance_nui_difference', 'best_walk_distance_nui_value',
+                    'best_walk_steps_nui_difference',
+                    'best_walk_steps_nui_value',
+                    'delta_walk_distance_nui_difference', 'delta_walk_distance_nui_value',
+                    'delta_walk_steps_nui_difference',
+                    'delta_walk_steps_nui_value']
 
     features_new = ['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-                'avg_walk_steps_nui_value',
-                  's1td_walk_distance_1_nui_difference', 's1td_walk_distance_1_nui_value', 's1td_walk_steps_1_nui_difference',
-                  's1td_walk_steps_1_nui_value',
-                'b1est_walk_distance_1_nui_difference', 'b1est_walk_distance_1_nui_value', 'b1est_walk_steps_1_nui_difference',
-                'b1est_walk_steps_1_nui_value',
-                  'd1elta_walk_distance_1_nui_difference', 'd1elta_walk_distance_1_nui_value', 'd1elta_walk_steps_1_nui_difference',
-                  'd1elta_walk_steps_1_nui_value']
+                    'avg_walk_steps_nui_value',
+                    's1td_walk_distance_1_nui_difference', 's1td_walk_distance_1_nui_value',
+                    's1td_walk_steps_1_nui_difference',
+                    's1td_walk_steps_1_nui_value',
+                    'b1est_walk_distance_1_nui_difference', 'b1est_walk_distance_1_nui_value',
+                    'b1est_walk_steps_1_nui_difference',
+                    'b1est_walk_steps_1_nui_value',
+                    'd1elta_walk_distance_1_nui_difference', 'd1elta_walk_distance_1_nui_value',
+                    'd1elta_walk_steps_1_nui_difference',
+                    'd1elta_walk_steps_1_nui_value']
 
+    features_selected_1 = [
+                            'avg_walk_distance_nui_difference',  # 1
+                           # 'std_walk_distance_nui_difference', # 2
+                           # 'best_walk_distance_nui_difference',
+                           # 'delta_walk_distance_nui_difference',
+                           # 's_td_walk_distance_1_nui_difference',
+
+                           # 'b_est_walk_distance_1_nui_difference',
+                           # 'd_elta_walk_distance_1_nui_difference',
+
+                           # 'd1elta50_walk_distance_1_nui_difference',
+                           # 'd1elta75_walk_distance_1_nui_difference',
+
+                           # 'avg_walk_steps_nui_difference',
+                           # 'std_walk_steps_nui_difference',
+                           # 'best_walk_steps_nui_difference',
+                           # 'delta_walk_steps_nui_difference',
+                           # 's_td_walk_steps_1_nui_difference',
+
+                           # 'b_est_walk_steps_1_nui_difference',
+                           # 'd_elta_walk_steps_1_nui_difference',
+
+                           # 'd1elta50_walk_steps_1_nui_difference',
+                           # 'd1elta75_walk_steps_1_nui_difference',
+                           ]
+    features_selected_2 = ['avg_walk_distance_nui_difference',  # 1
+                           'std_walk_distance_nui_difference', # 2
+                           # 'b1est_walk_distance_1_nui_difference', # 3
+                           # 'd1elta_walk_distance_1_nui_difference',
+                           # 'best_walk_distance_nui_difference',
+                           # 'delta_walk_distance_nui_difference',
+                           # 's1td_walk_distance_1_nui_difference',
+
+                           # 'avg_walk_steps_nui_difference',
+                           # 'std_walk_steps_nui_difference',
+                           # 'b1est_walk_steps_1_nui_difference',
+                           # 'd1elta_walk_steps_1_nui_difference',
+                           # 'best_walk_steps_nui_difference',
+                           # 'delta_walk_steps_nui_difference',
+                           # 's1td_walk_steps_1_nui_difference'
+                           ]
     features_all = motility_data.columns[4:]
     # print (features_all)
 
-    print (motility_data.shape)
+    print(motility_data.shape)
     # print(motility_data)
     # log_reg(motility_data, features_all)
 
@@ -109,51 +158,46 @@ def selectFeatures(motility_data):
 
     y = motility_data['risk_status']
 
-    X_old = motility_data[features_old]
+    X_old = motility_data[features_selected_1]
     sc = StandardScaler()
     X_old_std = sc.fit_transform(X_old)
-    f_old = fs.rfecv(X_old_std, y, name = 'lr_old')
-    print (X_old.columns[f_old])
+    f_old = fs.rfecv(X_old_std, y, name='lr_new', k=7)
+    print(X_old.columns[f_old])
 
-    X_new = motility_data[features_new]
+    X_new = motility_data[features_selected_2]
     sc = StandardScaler()
     X_new_std = sc.fit_transform(X_new)
-    f_new = fs.rfecv(X_new_std, y, name = 'lr_new')
-    print (X_new.columns[f_new])
+    f_new = fs.rfecv(X_new_std, y, name='lr_old', k=7)
+    print(X_new.columns[f_new])
 
 
-# data1 = dp.get_data('localhost', 'city4age_dba', 'city4age_dba')
-# data2 = dp.get_data('109.111.225.84', 'city4age_srv', 'city4age_srv')
-# compare_dfs(data1, data2)
+def get_motility_data():
+    # data1 = dp.get_data('localhost', 'city4age_dba', 'city4age_dba')
+    # data2 = dp.get_data('109.111.225.84', 'city4age_srv', 'city4age_srv')
+    # compare_dfs(data1, data2)
 
-# data = dp.get_data('109.111.225.84', 'city4age_srv', 'city4age_srv')
-data = dp.get_data('localhost', 'city4age_dba', 'city4age_dba')
+    # data = dp.get_data('109.111.225.84', 'city4age_srv', 'city4age_srv')
+    # data = dp.get_data('localhost', 'city4age_dba', 'city4age_dba')
+    # prepared_data = dp.prepare_data(data)
+    # motility_data = dp.get_motility_data(prepared_data)
 
-prepared_data = dp.prepare_data(data)
-motility_data = dp.get_motility_data(prepared_data)
+    motility_data = pd.read_csv('Data//assessments_1710_multi.csv')
+    return motility_data
 
-selectFeatures(motility_data)
 
-# log_reg(motility_data, features=['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-#                 'avg_walk_steps_nui_value',
-#                   's1td_walk_distance_1_nui_difference', 's1td_walk_distance_1_nui_value', 's1td_walk_steps_1_nui_difference',
-#                   's1td_walk_steps_1_nui_value',
-#                 'b1est_walk_distance_1_nui_difference', 'b1est_walk_distance_1_nui_value', 'b1est_walk_steps_1_nui_difference',
-#                 'b1est_walk_steps_1_nui_value',
-#                   'd1elta_walk_distance_1_nui_difference', 'd1elta_walk_distance_1_nui_value', 'd1elta_walk_steps_1_nui_difference',
-#                   'd1elta_walk_steps_1_nui_value'])
-#
-# log_reg(motility_data, features=['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value', 'avg_walk_steps_nui_difference',
-#                 'avg_walk_steps_nui_value',
-#                   'std_walk_distance_nui_difference', 'std_walk_distance_nui_value', 'std_walk_steps_nui_difference',
-#                   'std_walk_steps_nui_value',
-#                 'best_walk_distance_nui_difference', 'best_walk_distance_nui_value', 'best_walk_steps_nui_difference',
-#                 'best_walk_steps_nui_value',
-#                   'delta_walk_distance_nui_difference', 'delta_walk_distance_nui_value', 'delta_walk_steps_nui_difference',
-#                   'delta_walk_steps_nui_value'])
+# all_perc_changes = dp.get_all_perc_changes()
+# dp.prepare_and_save(all_perc_changes)
+data1 = pd.read_csv('Data//all_perc_changes.csv')
 
-# log_reg(motility_data, features=['avg_walk_distance_nui_difference', 'avg_walk_distance_nui_value',
-#        'avg_walk_steps_nui_difference', 'avg_walk_steps_nui_value',
-#        's1td_walk_distance_1_nui_value', 's1td_walk_steps_1_nui_value'])
 
-# pltg.plot_density_graph_feature(motility_data)
+# motility_data = get_motility_data()
+# selectFeatures(motility_data)
+# dp.find_perc_chg()
+features = ['avg_walk_distance_perc_change', 'avg_walk_steps_perc_change', 'std_walk_distance_perc_change', 'std_walk_steps_perc_change',
+            'best_walk_distance_perc_change', 'best_walk_steps_perc_change',
+            'delta_walk_distance_perc_change', 'delta_walk_steps_perc_change']
+# features = ['avg_walk_distance_perc_change', 'std_walk_distance_perc_change']
+pltg.plot_perc_changes(data1, features)
+
+# pltg.scatter_with_color_dimension_graph(motility_data['gef_difference'], motility_data['risk_status'], ['Number of Observations', 'gef_difference', 'gef_difference'])
+## pltg.plot_density_graph_feature(motility_data)

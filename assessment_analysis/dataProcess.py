@@ -180,7 +180,8 @@ from
             gef.gef_type_id,
             gef.gef_value,
             nui.nui_type_id,
-            nui.nui_value
+            nui.nui_value 
+            
         FROM
             city4age_sr.geriatric_factor_value AS gef
         JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
@@ -229,7 +230,7 @@ from
                 *
             FROM
                 q0_ges
-    ),
+    ), 
      q1_gef AS (
         SELECT
             gef.user_in_role_id,
@@ -351,7 +352,8 @@ from
         AND tab1.nui_type_id = tab2.nui_type_id
         WHERE
             tab2.interval_start = tab1.interval_start - INTERVAL '1 month'
-    ) SELECT DISTINCT
+    ), res as 
+    (SELECT DISTINCT
     -- count (*) as cnt,
         q1.user_in_role_id,
         q1.interval_start,
@@ -364,6 +366,7 @@ from
         -- 	q1.nui_type_id,
         nui_dif.nui_value - nui_dif.nui_value_prev AS nui_difference,
         q1.risk_status,
+    nui2.nui_value as zero_value,
         --         CASE
         --         WHEN q1.user_in_role_id = 129
         --         AND q1.gef_value = 1.5 
@@ -386,6 +389,10 @@ from
         AND nui_dif.gef_type_id = q1.gef_type_id
         AND q1.nui_type_id = nui_dif.nui_type_id
         AND q1.time_interval_id = nui_dif.time_interval_id
+    )
+    join city4age_sr.numeric_indicator_value as nui2 on (
+        q1.user_in_role_id = nui2.user_in_role_id
+        and q1.nui_type_id = nui2.nui_type_id
     )
     AND q1.assessment_comment NOT LIKE '%August%'
     AND q1.assessment_comment NOT LIKE '%august%'
@@ -413,6 +420,8 @@ from
     -- and q1.assessment_comment like '%Values in July 2018 declined%' -- fixed in assessed_gef_value_set
     and q1.assessment_comment not like '%Sharp drop in both the number of steps and distance compared to July 2017%' --duplicate
     and q1.assessment_comment not like '%Slight reduction in walking steps%' -- redundant
+    and q1.assessment_comment not like '%Both steps and distance plunged compared to September 2017%' -- only few measure points
+    -- and q1.assessment_comment not like '%Sharp drop in both the number of steps and distance compared to previous month%'
     -- group BY
     -- 	q1.user_in_role_id,
     -- 	q1.interval_start,
@@ -426,10 +435,48 @@ from
     -- 	q1.data_validity_status,
     -- 	q1.assessment_comment 
     -- -- having count (*) > 1
+    where nui2.id = (SELECT nui1.id                                                                        
+                                                            FROM city4age_sr.numeric_indicator_value AS nui1                                                  
+                                                            INNER JOIN city4age_sr.time_interval AS ti1                                                       
+                                                                ON nui1.time_interval_id = ti1. ID                                                
+                                                            WHERE nui1.user_in_role_id = nui2.user_in_role_id                                     
+                                                            AND nui1.nui_type_id = nui2.nui_type_id                                               
+                                                            ORDER BY ti1.interval_start ASC                                                       
+                                                            LIMIT 1)  
     ORDER BY
     -- cnt,
+    -- nui_difference desc,
         user_in_role_id,
         interval_start
+    )
+    select 
+        res.user_in_role_id,
+        res.interval_start,
+        -- 	q1.time_interval_id,
+        res.gef_name,
+        res.gef_value,
+        res.gef_difference,
+        res.nui_name,
+        res.nui_value,
+        -- 	q1.nui_type_id,
+        res.nui_difference,
+        res.risk_status,
+     case
+        when zero_value = 0 then 0 else 
+        (nui_value - zero_value) / zero_value end as perc_change,
+        --         CASE
+        --         WHEN q1.user_in_role_id = 129
+        --         AND q1.gef_value = 1.5 
+        --           THEN
+        --             'A'
+        --         ELSE
+        --             q1.risk_status
+        --         END AS risk_status,
+        res.data_validity_status,
+        res.assessment_comment  
+    from res
+    -- order by perc_change desc
+
     '''
     # where risk_status in ('W', 'A')
     cur = conn.cursor()
@@ -440,6 +487,99 @@ from
     return df
 
 
+def get_all_perc_changes():
+    conn = psycopg2.connect(host = 'localhost', port = 5432, dbname = 'city4age', user = 'city4age_dba', password = 'city4age_dba')
+    sql = '''
+        WITH q0_gef AS (
+        SELECT
+            uir. ID AS user_in_role_id,
+            ti. ID AS time_interval_id,
+            ti.interval_start,
+            ti."id" AS timeid,
+            gef.gef_type_id,
+            gef.gef_value,
+            nui.nui_type_id,
+            nui.nui_value
+        FROM
+            city4age_sr.geriatric_factor_value AS gef
+        JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir. ID
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv ON gef.gef_type_id = pdv.derived_detection_variable_id
+        AND uir.pilot_code = pdv.pilot_code
+        JOIN city4age_sr.md_pilot_detection_variable AS pdv1 ON pdv.detection_variable_id = pdv1.derived_detection_variable_id
+        AND uir.pilot_code = pdv1.pilot_code
+        JOIN city4age_sr.numeric_indicator_value AS nui ON gef.time_interval_id = nui.time_interval_id
+        AND gef.user_in_role_id = nui.user_in_role_id
+        AND nui.nui_type_id = pdv1.detection_variable_id
+        JOIN city4age_sr.time_interval AS ti ON gef.time_interval_id = ti. ID
+        WHERE
+            gef.gef_type_id IN (504, 514) -- walking or motility
+        AND uir.pilot_code LIKE '%bhx%'
+    ),
+     interm AS (
+        SELECT
+            q0_gef.user_in_role_id,
+            q0_gef.gef_type_id,
+            q0_gef.nui_type_id,
+            q0_gef.interval_start,
+            q0_gef.nui_value AS cur_val,
+            nui2.nui_value AS zero_val
+        FROM
+            q0_gef
+        JOIN city4age_sr.numeric_indicator_value AS nui2 ON (
+            q0_gef.user_in_role_id = nui2.user_in_role_id
+            AND q0_gef.nui_type_id = nui2.nui_type_id
+        )
+        WHERE
+            nui2. ID = (
+                SELECT
+                    nui1. ID
+                FROM
+                    city4age_sr.numeric_indicator_value AS nui1
+                INNER JOIN city4age_sr.time_interval AS ti1 ON nui1.time_interval_id = ti1. ID
+                WHERE
+                    nui1.user_in_role_id = nui2.user_in_role_id
+                AND nui1.nui_type_id = nui2.nui_type_id
+                ORDER BY
+                    ti1.interval_start ASC
+                LIMIT 1
+            )
+    ) SELECT
+        interm.user_in_role_id,
+        interm.gef_type_id,
+        dv.detection_variable_name AS nui_name,
+        interm.interval_start,
+        -- interm.nui_value as cur_val,
+        CASE
+    WHEN interm.zero_val = 0 THEN
+        0
+    ELSE
+        (
+            interm.cur_val - interm.zero_val
+        ) / interm.zero_val
+    END AS perc_change
+    FROM
+        interm
+    JOIN city4age_sr.cd_detection_variable AS dv ON interm.nui_type_id = dv. ID
+    '''
+    cur = conn.cursor()
+    cur.execute(sql)
+    df = pd.DataFrame(cur.fetchall())
+    df.columns = [item[0] for item in cur.description]
+    # to_xlxs(df, 'all_perc_changes')
+    return df
+
+
+def prepare_and_save(data):
+    # print (data)
+    data.loc[:,'interval_start'] = [datum.strftime('%Y-%m-%d') for datum in data['interval_start']]
+    data.loc[:,'interval_start'] = [datetime.datetime.strptime(datum, '%Y-%m-%d') for datum in data['interval_start']]
+    pivoted_data = pd.pivot_table(data, index = ['user_in_role_id', 'interval_start'], columns='nui_name', values=['perc_change'], aggfunc=np.max)
+    pivoted_data.columns = [f'{j}_{i}' for i, j in pivoted_data.columns]
+    pivoted_data = pivoted_data.reset_index()
+    # print (pivoted_data.iloc[:, 3:]!=0)
+    pivoted_data = pivoted_data.loc[(pivoted_data.iloc[:, 3:]!=0).any(axis=1)]
+    to_xlxs(pivoted_data, 'all_perc_changes')
+
 def prepare_data(data):
     data = data[data['data_validity_status']=='V']
     risk_mapping = {'A': 2, 'W':1, 'N': 0}
@@ -448,27 +588,41 @@ def prepare_data(data):
     data.loc[:,'risk_status'] = data['risk_status'].map(risk_mapping)
     data.loc[:,'interval_start'] = [datum.strftime('%Y-%m-%d') for datum in data['interval_start']]
     data.loc[:,'interval_start'] = [datetime.datetime.strptime(datum, '%Y-%m-%d') for datum in data['interval_start']]
-    data = data[['user_in_role_id', 'interval_start', 'gef_name', 'gef_value', 'gef_difference', 'nui_name', 'nui_value', 'nui_difference', 'risk_status', 'data_validity_status', 'assessment_comment']]
+    data = data[['user_in_role_id', 'interval_start', 'gef_name', 'gef_value', 'gef_difference', 'nui_name', 'nui_value', 'nui_difference', 'perc_change', 'risk_status', 'data_validity_status', 'assessment_comment']]
     return data
 
 
-def to_xlxs(data):
-    writer = pd.ExcelWriter('assessments_nuis_new.xlsx', engine='xlsxwriter')
+def to_xlxs(data, name):
+    writer = pd.ExcelWriter("Data//" + name +'.xlsx', engine='xlsxwriter')
     data.to_excel(writer, sheet_name='Sheet1')
+    data.to_csv("Data//" + name +'.csv')
     writer.save()
 
 
 def get_motility_data(data):
     motility_data = data[(data['gef_name']=='motility') | (data['gef_name']=='walking')]
+    # to_xlxs(motility_data, name='raw_assessments_1710_multi')
     motility_data = pd.pivot_table(motility_data, index =['interval_start', 'user_in_role_id', 'assessment_comment', 'risk_status', 'gef_value', 'gef_difference'],
-                                   columns = 'nui_name', values= ['nui_value', 'nui_difference'], aggfunc= np.max)
+                                   columns = 'nui_name', values= ['nui_value', 'nui_difference', 'perc_change'], aggfunc= np.max)
     motility_data.columns = [f'{j}_{i}' for i, j in motility_data.columns]
     motility_data = motility_data.reset_index()
     motility_data=motility_data.sort_values('risk_status')
     motility_data.reset_index(drop= True, inplace=True)
-    # to_xlxs(motility_data)
+    # to_xlxs(motility_data, name = 'assessments_1710')
     return motility_data.iloc[:,3:]
 
+def lam1(x):
+    return np.percentile(x, 25)
 
+def lam2(x):
+    return np.percentile(x, 50)
+
+def find_perc_chg():
+    motility_data = pd.read_csv("Data//raw_assessments_1710_multi.csv")
+    # motility_data.plot('')
+    # gr_data = motility_data.groupby(['nui_name', 'risk_status'])['perc_change'].min()
+    pivoted_data = pd.pivot_table(motility_data, index = ['nui_name', 'risk_status'], values='perc_change', aggfunc=[np.min, np.max, lam1, lam2, np.mean, np.std]).reset_index()
+    # to_xlxs(pivoted_data, "perc_chg")
+    print(pivoted_data)
 
 

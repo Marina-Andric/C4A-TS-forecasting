@@ -3,6 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.svm import SVC
 import matplotlib.pyplot as plt
+import modelAccuracy as ma
 
 
 # remove features with low variance
@@ -19,10 +20,10 @@ def remove_fea_low_variance(data):
 
 
 # recursive feature elimination
-def rfecv(X, y, name):
+def rfecv(X, y, name, k):
     logReg = LogisticRegression(multi_class='multinomial', solver = 'newton-cg', C = 1000.0, random_state=0)
     # svc = SVC(kernel='sigmoid')
-    rfecv = RFECV(estimator = logReg, step=1, cv=StratifiedKFold(9, True, 1), scoring='accuracy')
+    rfecv = RFECV(estimator = logReg, step=1, cv=StratifiedKFold(k, True, 1))
     rfecv.fit(X, y)
     print ("Optimal number of features: ", rfecv.n_features_)
     # plotting
@@ -34,6 +35,8 @@ def rfecv(X, y, name):
     plt.savefig("Images\\FeatureSelectionPlots\\features_" + name + ".png")
     # print (rfecv.support_)
     # print (rfecv.ranking_)
+    ma.get_prediction_accuracy(logReg, X, y, k)
+    print (rfecv.ranking_)
     return rfecv.support_
 
 # tree-based feature selection

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
+import math
 
 import plotly.graph_objs as go
 import plotly.plotly as py
@@ -86,3 +87,36 @@ def plot_density_graph_feature(data):
         labels = ["Number of Observations", feature, feature]
         scatter_with_color_dimension_graph(data[feature], data['risk_status'], labels)
 
+
+def plot_perc_changes(data, features):
+    # for name in features:
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(1, 1, 1)
+    #     ax.grid()
+    #     risk_alert = data[data['risk_status'] == 2]
+    #     ax.plot(range(0, len(risk_alert)), risk_alert[name], color = 'red')
+    #     risk_warning = data[data['risk_status'] == 1]
+    #     ax.plot(range(len(risk_alert), len(risk_alert)+len(risk_warning)), risk_warning[name], color = 'orange')
+    #     risk_no = data[data['risk_status'] == 0]
+    #     ax.plot(range(len(risk_alert)+len(risk_warning), len(data)), risk_no[name], color = 'green')
+    #     fig.savefig("Images//PercChanges//" + name + ".png")
+    for feature in features:
+        print ('feature: ', feature)
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        sorted_vals = sorted(data[feature])
+        # sorted_vals = sorted_vals[30:-30]
+        length = len(sorted_vals)
+        splits = 6
+        ax.plot(range(0, len(sorted_vals)), sorted_vals, marker = '+', markeredgecolor = 'blue', linestyle = "")
+        ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/2))])
+        ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/splits))])
+        print ([sorted_vals[item] for item in range(0, length, int(length/splits))])
+        ax.set_yticks(np.arange(math.floor(min(sorted_vals))-0.5, math.ceil(max(sorted_vals))+0.5, 0.5), minor = True)
+        ax.set_xticks(np.arange(0, length, int(length/splits)))
+        ax.set_ylabel('Percentage Change (from zero month)')
+        ax.set_xlabel('Number of Observations')
+        ax.grid(which='minor', alpha=0.2)
+        ax.grid(which='major', alpha=0.5)
+        fig.suptitle("Feature: " + feature)
+        fig.savefig("Images//PercChanges//" + feature + "_sorted" + ".png")
