@@ -66,7 +66,7 @@ def plot_decision_regions(X, y, classifier, labels, name, resolution = 0.02):
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.legend(loc = 'upper left')
-    plt.savefig('Images\decision_regions' + '_' + name + '.png')
+    plt.savefig('Images\\DensityGraphs_conf2310\\decision_regions' + '_' + name + '.png')
 
 
 def plot_bubble_chart(data, variables, name):
@@ -79,7 +79,7 @@ def plot_bubble_chart(data, variables, name):
     plt.xlabel(variables[0])
     plt.ylabel(variables[1])
     plt.grid()
-    plt.savefig('Images\\bubble_chart_' + name + '.png')
+    plt.savefig('Images\\BubbleCharts\\bubble_chart_' + name + '.png')
 
 
 def plot_density_graph_feature(data):
@@ -105,12 +105,13 @@ def plot_perc_changes(data, features):
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         sorted_vals = sorted(data[feature])
-        # sorted_vals = sorted_vals[30:-30]
+        # sorted_vals = sorted_vals[:-30]
         length = len(sorted_vals)
-        splits = 6
+        splits = 7 # 7
         ax.plot(range(0, len(sorted_vals)), sorted_vals, marker = '+', markeredgecolor = 'blue', linestyle = "")
-        ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/2))])
-        ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/splits))])
+        # ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/2))])
+        # ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/splits))])
+        ax.set_yticks(np.arange(math.floor(min(sorted_vals)), math.ceil(max(sorted_vals)), 0.5))
         print ([sorted_vals[item] for item in range(0, length, int(length/splits))])
         ax.set_yticks(np.arange(math.floor(min(sorted_vals))-0.5, math.ceil(max(sorted_vals))+0.5, 0.5), minor = True)
         ax.set_xticks(np.arange(0, length, int(length/splits)))

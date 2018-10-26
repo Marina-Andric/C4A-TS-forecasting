@@ -5,6 +5,7 @@ from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 import modelAccuracy as ma
 
+# Additionally, embedded methods to be considered
 
 # remove features with low variance
 def remove_fea_low_variance(data):
