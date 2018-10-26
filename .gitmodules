@@ -1,0 +1,3 @@
+[submodule "ts_analysis"]
+	path = ts_analysis
+	url = git://github.com/Marina-Andric/C4A-TS-forecasting.git
