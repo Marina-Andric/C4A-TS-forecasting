@@ -12,7 +12,6 @@ with open("Data//assessment_backup.json") as f:
 for k, v in podaci.items():
     k2 = tuple(map(int, k.split("-")))
     print(k2)
-    # trenutne vrednosti, privremeno resenje!!!
     if k2[1] == 12120:
         ti_id = 11155
     elif k2[1] == 10871:
