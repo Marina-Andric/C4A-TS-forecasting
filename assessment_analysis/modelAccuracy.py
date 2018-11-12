@@ -4,7 +4,7 @@ from sklearn.model_selection import StratifiedKFold, KFold
 import numpy as np
 
 
-def get_prediction_accuracy(model, X, y, k=7):
+def get_prediction_accuracy(model, X, y, k=6):
     # print ("Multinomial Logistic regression Train Accuracy :: ", accuracy_score(y_train, mul_lr.predict(X_train_std)))
     # print ("Multinomial Logistic regression Test Accuracy :: ", accuracy_score(y, model.predict(X)))
     # y_score = mul_lr.predict(X_test_std)

@@ -22,7 +22,7 @@ def remove_fea_low_variance(data):
 
 # recursive feature elimination
 def rfecv(X, y, name, k):
-    logReg = LogisticRegression(multi_class='multinomial', solver = 'newton-cg', C = 1000.0, random_state=0)
+    logReg = LogisticRegression(multi_class='multinomial', solver = 'newton-cg', C = 1000.0, random_state=1)
     # svc = SVC(kernel='sigmoid')
     rfecv = RFECV(estimator = logReg, step=1, cv=StratifiedKFold(k, True, 1))
     rfecv.fit(X, y)
@@ -33,7 +33,7 @@ def rfecv(X, y, name, k):
     plt.ylabel("Cross validation score (nb of correct classifications)")
     plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
     plt.grid()
-    plt.savefig("Images\\FeatureSelectionPlots\\features_" + name + ".png")
+    plt.savefig("Images\\FeatureSelectionPlots\\" + name + ".png")
     # print (rfecv.support_)
     # print (rfecv.ranking_)
     ma.get_prediction_accuracy(logReg, X, y, k)

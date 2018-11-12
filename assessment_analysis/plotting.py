@@ -35,7 +35,7 @@ def scatter_with_color_dimension_graph(feature, target, layout_labels):
     data = [trace1]
     fig = Figure(data=data, layout=layout)
     # plot_url = py.plot(fig)
-    py.image.save_as(fig, filename='Images\\DensityGraphs_conf2\\' + layout_labels[1] + '_Density.png')
+    py.image.save_as(fig, filename='Images\\DensityGraphs_PhysicalActivity\\' + layout_labels[1] + '_Density.png')
 
 
 # plotting in two dimensions
@@ -83,12 +83,12 @@ def plot_bubble_chart(data, variables, name):
 
 
 def plot_density_graph_feature(data):
-    for feature in data.columns[1:]:
+    for feature in data.columns[2:]:
         labels = ["Number of Observations", feature, feature]
         scatter_with_color_dimension_graph(data[feature], data['risk_status'], labels)
 
 
-def plot_perc_changes(data, features):
+def plot_relative_changes(data, features):
     # for name in features:
     #     fig = plt.figure()
     #     ax = fig.add_subplot(1, 1, 1)
@@ -111,13 +111,13 @@ def plot_perc_changes(data, features):
         ax.plot(range(0, len(sorted_vals)), sorted_vals, marker = '+', markeredgecolor = 'blue', linestyle = "")
         # ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/2))])
         # ax.set_yticks([sorted_vals[item] for item in range(0, length, int(length/splits))])
-        ax.set_yticks(np.arange(math.floor(min(sorted_vals)), math.ceil(max(sorted_vals)), 0.5))
+        # ax.set_yticks(np.arange(math.floor(min(sorted_vals)), math.ceil(max(sorted_vals)), 0.5))
         print ([sorted_vals[item] for item in range(0, length, int(length/splits))])
-        ax.set_yticks(np.arange(math.floor(min(sorted_vals))-0.5, math.ceil(max(sorted_vals))+0.5, 0.5), minor = True)
+        # ax.set_yticks(np.arange(math.floor(min(sorted_vals))-0.5, math.ceil(max(sorted_vals))+0.5, 0.5), minor = True)
         ax.set_xticks(np.arange(0, length, int(length/splits)))
-        ax.set_ylabel('Percentage Change (from zero month)')
+        ax.set_ylabel('Percentage Change (from the referent month)')
         ax.set_xlabel('Number of Observations')
         ax.grid(which='minor', alpha=0.2)
         ax.grid(which='major', alpha=0.5)
         fig.suptitle("Feature: " + feature)
-        fig.savefig("Images//PercChanges//" + feature + "_sorted" + ".png")
+        fig.savefig("Images//PercChanges//physical_activity//" + feature + "_sorted" + ".png")

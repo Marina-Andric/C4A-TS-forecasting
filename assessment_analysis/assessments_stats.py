@@ -3,13 +3,17 @@ import pandas as pd
 import numpy as np
 import datetime
 from tabulate import tabulate
+from random import shuffle
 
 # import plotly
 # import plotly.plotly as py
 # import plotly.graph_objs as go
 # plotly.tools.set_credentials_file(username='marina08', api_key='1RyNwG5VQ6mfyaawvTEP')
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+mpl.rcParams['font.size'] = 15.0
 
 def get_data():
     conn = psycopg2.connect(host = 'localhost', port = '5432', dbname = 'city4age', user = 'city4age_dba', password = 'city4age_dba')
@@ -29,8 +33,8 @@ def get_data():
     JOIN city4age_sr.geriatric_factor_value AS gef ON agef.gef_value_id = gef."id"
     JOIN city4age_sr.cd_detection_variable AS dv ON gef.gef_type_id = dv. ID
     JOIN city4age_sr.user_in_role AS uir ON gef.user_in_role_id = uir."id"
-    WHERE
-        author_id = 228
+    -- WHERE
+    --     author_id = 228
     ORDER BY
         created,
         detection_variable_type,
@@ -64,35 +68,46 @@ def pie_risk_status(data):
     plt.show()
 
 
-data = get_data()
-prepared_data = prepare_data(data)
-# print (data)
-
 def get_asse_month(prepared_data):
-    asse_month = np.sum([1 if prepared_data['created'][i].month==8 else 0 for i in range(0, len(prepared_data))])
+    asse_month = np.sum([1 if prepared_data['created'][i].month==4 else 0 for i in range(0, len(prepared_data))])
     print (asse_month)
 
 def asse_to_excel(grouped_data):
     grouped_data = prepared_data.groupby(['userid', 'detection_variable_name']).size()
     # print (grouped_data)
     grouped_data = grouped_data.reset_index()
-    # print (tabulate(grouped_data, headers='keys', tablefmt='psql'))
+    print (tabulate(grouped_data, headers='keys', tablefmt='psql'))
     writer = pd.ExcelWriter('output.xlsx')
     grouped_data.to_excel(writer, 'Sheet1')
     writer.save()
 
-def pie_factor(data):
+def pie_factors(data):
     labels = np.unique(data['detection_variable_name'])
+    # labels = ['quality_of_sleep' 'health-physical'
+    #  'instrumental_activities_of_daliy_living' 'physical_activity'
+    #  'basic_activities_of_daliy_living' 'motility' 'walking']
+
     # labels_chart = ['Risk alert' if status == 'A' else 'Risk warning' if status == 'W' else 'No Risk' for status in np.unique(data['risk_status'])]
     # print (data['risk_status'] == 'A')
+    shuffle(labels) # shuffle in place. This is to avoid
+    print (labels)
     values = [np.sum(1 if data['detection_variable_name'][i]==factor else 0 for i in range(0, len(data)))/len(data)*100 for factor in labels]
     # print (values)
     colors = ['#FEBFB3', '#E1396C', '#96D38C', '#D0F9B1']
-    colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral', 'violet']
+    colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral', 'violet', 'moccasin', 'gainsboro', 'lightblue']
     plt.pie(values, colors=colors, autopct='%1.1f%%', shadow=True, startangle=90, labels = labels)
     # plt.legend(patches, labels_chart, loc="best")
     plt.axis('equal')
     plt.tight_layout()
     plt.show()
+    # plt.savefig('Images\\Assessments_stats\\assessment_pie.png')
 
-pie_factor(prepared_data)
+data = get_data()
+prepared_data = prepare_data(data)
+# print (data)
+# pie_factors(prepared_data)
+# pie_risk_status(prepared_data)
+
+get_asse_month(prepared_data)
+# asse_to_excel(prepared_data)
+# print (len(prepared_data))
